@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Transaction extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'description',
+        'amount',
+        'type',
+        'category',
+        'payment_type',
+        'billing_day', 
+    ];
+
+    /**
+     *  Connection to user table
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+}
