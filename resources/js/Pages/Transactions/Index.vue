@@ -200,7 +200,7 @@ const formatDate = (dateString: string) => {
                     </button>
                 </form>
 
-                <div class="bg-gradient-to-br from-indigo-600 to-blue-700 p-6 rounded-2xl shadow-xl text-white mb-8">
+                <div class="bg-gradient-to-br from-indigo-600 to-blue-700 p-6 rounded-xl shadow-xl text-white mb-8">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-indigo-100 text-sm font-medium uppercase tracking-wider">Total Balance</p>
@@ -225,7 +225,7 @@ const formatDate = (dateString: string) => {
                 </div>
 
                 <div v-if="activeSubsCount > 0"
-                    class="mb-8 overflow-hidden bg-white border text-center border-slate-200 rounded-2xl shadow-sm">
+                    class="mb-8 overflow-hidden bg-white border text-center border-slate-200 rounded-xl shadow-sm">
                     <div class="bg-slate-50 px-5 py-3 border-b border-slate-200">
                         <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Monthly Recurring
                             Overview
@@ -258,53 +258,58 @@ const formatDate = (dateString: string) => {
 
                 <div class="space-y-3">
                     <div v-for="t in transactions" :key="t.id"
-                        class="flex justify-between items-center p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                        class="flex items-center justify-between p-3 md:p-5 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
 
-                        <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-3 md:gap-6 min-w-0">
                             <div
-                                class="text-2xl p-2 bg-gray-50 rounded-full w-12 h-12 flex items-center justify-center">
+                                class="p-2 bg-gray-50 rounded-full w-10 h-10 md:w-16 md:h-16 flex-shrink-0 flex items-center justify-center text-md md:text-xl">
                                 {{ getCategoryIcon(t.category) }}
                             </div>
 
-                            <div>
-                                <p class="font-bold text-gray-800">{{ t.description }}</p>
-                                <p class="text-xs text-gray-400 font-medium uppercase tracking-wider">
-                                    {{ t.category }}
-                                    <span v-if="t.payment_type === 'recurring'"
-                                        class="ml-2 text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full text-[10px]">
-                                        🔄 Every {{ t.billing_day }}.
-                                    </span>
+                            <div class="min-w-0">
+                                <p class="font-bold text-gray-800 text-sm md:text-xl truncate leading-tight">
+                                    {{ t.description }}
                                 </p>
+                                <div class="flex items-center gap-2">
+                                    <p
+                                        class="text-gray-400 font-medium uppercase tracking-wider text-[10px] md:text-xs">
+                                        {{ t.category }}
+                                    </p>
+                                    <span v-if="t.payment_type === 'recurring'"
+                                        class="text-[8px] md:text-xs text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                        🔄 <span class="hidden sm:inline">Every</span> {{ t.billing_day }}.
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-6">
+                        <div class="flex items-center gap-3 md:gap-8 flex-shrink-0 ml-4">
                             <div class="text-right">
                                 <p :class="t.type === 'income' ? 'text-green-600' : 'text-gray-900'"
-                                    class="font-bold text-lg">
+                                    class="font-extrabold text-sm md:text-xl whitespace-nowrap">
                                     {{ t.type === 'income' ? '+' : '-' }}{{ formatCurrency(t.amount) }}
                                 </p>
-                                <p class="text-[10px] text-gray-400">{{ formatDate(t.created_at) }}</p>
+                                <p class="text-gray-400 text-[10px] md:text-sm">{{ formatDate(t.created_at) }}</p>
                             </div>
 
                             <button @click="confirmDelete(t)"
-                                class="group flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-200"
+                                class="flex items-center justify-center p-2 md:px-4 md:py-2 rounded-lg transition-all"
                                 :class="t.payment_type === 'recurring'
-                                    ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                                    ? 'bg-amber-50 text-amber-600'
                                     : 'bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600'">
-                                <svg v-if="t.payment_type !== 'recurring'" xmlns="http://www.w3.org/2000/svg"
-                                    class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 font-bold" fill="none"
+
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-6 md:w-6" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    <path v-if="t.payment_type !== 'recurring'" stroke-linecap="round"
+                                        stroke-linejoin="round" stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
 
-                                <span class="text-[10px] font-black uppercase tracking-wider">
-                                    {{ t.payment_type === 'recurring' ? 'Cancel Sub' : 'Delete' }}
+                                <span
+                                    class="hidden lg:block ml-2 text-xs md:text-sm font-black uppercase tracking-tighter">
+                                    {{ t.payment_type === 'recurring' ? 'Cancel' : 'Delete' }}
                                 </span>
                             </button>
                         </div>
@@ -326,7 +331,7 @@ const formatDate = (dateString: string) => {
             </div>
 
             <div
-                class="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 overflow-hidden transform transition-all animate-in zoom-in duration-200">
+                class="relative bg-white rounded-xl shadow-xl max-w-sm w-full p-6 overflow-hidden transform transition-all animate-in zoom-in duration-200">
                 <div class="text-center">
                     <div :class="transactionToDelete?.payment_type === 'recurring' ? 'bg-amber-100' : 'bg-red-100'"
                         class="mx-auto flex items-center justify-center h-12 w-12 rounded-full mb-4">

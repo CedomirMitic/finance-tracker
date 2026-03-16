@@ -15,18 +15,34 @@ const selectedYear = ref(new Date().getFullYear());
 const selectedMonth = ref(('0' + (new Date().getMonth() + 1)).slice(-2));
 
 const downloadCsv = () => {
-    window.location.href = route('export.download', {
+    const url = route('export.download', {
         year: selectedYear.value,
         month: selectedMonth.value,
         format: 'csv'
     });
+
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `report-${selectedYear.value}-${selectedMonth.value}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 };
 
 const downloadPdf = () => {
-    window.location.href = route('export.pdf', {
+    const url = route('export.pdf', {
         year: selectedYear.value,
         month: selectedMonth.value
     });
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.setAttribute('download', `report-${selectedYear.value}-${selectedMonth.value}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 };
 </script>
 

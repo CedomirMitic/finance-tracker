@@ -23,8 +23,6 @@ class ExportController extends Controller
         ]);
 
         $userId = auth()->id();
-        
-        
         $transactions = Transaction::where('user_id', $userId)
             ->whereYear('created_at', $request->year)
             ->whereMonth('created_at', $request->month)
@@ -33,7 +31,7 @@ class ExportController extends Controller
 
         $fileName = "report_{$request->year}_{$request->month}.csv";
 
-        return response()->stream(function() use($transactions) {
+        return response()->streamDownload(function() use($transactions) {
             $file = fopen('php://output', 'w');
             fputcsv($file, ['Date', 'Category', 'Description', 'Type', 'Amount']);
 
@@ -47,16 +45,18 @@ class ExportController extends Controller
                 ]);
             }
             fclose($file);
-        }, 200, [
-            "Content-type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=$fileName",
+        }, $fileName, [
+            "Content-Type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=\"$fileName\"",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
         ]);
     }
 
     public function downloadPdf(Request $request)
     {
         $userId = auth()->id();
-        
         
         $transactions = Transaction::where('user_id', $userId)
             ->whereYear('created_at', $request->year)
@@ -74,6 +74,13 @@ class ExportController extends Controller
             'totalIncome' => $totalIncome
         ]);
 
-        return $pdf->download("Report-{$request->year}-{$request->month}.pdf");
+        $fileName = "Report-{$request->year}-{$request->month}.pdf";
+
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->output();
+        }, $fileName, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$fileName.'"'
+        ]);
     }
 }
