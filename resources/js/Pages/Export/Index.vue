@@ -21,7 +21,6 @@ const downloadCsv = () => {
         format: 'csv'
     });
 
-    
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', `report-${selectedYear.value}-${selectedMonth.value}.csv`);
@@ -36,13 +35,10 @@ const downloadPdf = () => {
         month: selectedMonth.value
     });
 
-    const link = document.createElement('a');
-    link.href = url;
-    link.target = '_blank';
-    link.setAttribute('download', `report-${selectedYear.value}-${selectedMonth.value}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Mobile browsers (especially iOS Safari) block simulated click events on dynamically 
+    // created <a> elements if they aren't explicitly appended to the DOM or if target='_blank' 
+    // opens an unhandled popup tab. Direct window assignment handles mobile routing natively.
+    window.location.href = url;
 };
 </script>
 
