@@ -10,9 +10,21 @@ export interface Transaction {
     created_at: string;
 }
 
-// Ako imaš i User interfejs, i on mora imati export
 export interface User {
     id: number;
     name: string;
     email: string;
+    email_verified_at?: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface PaginatedResponse<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    next_page_url: string | null;
+    prev_page_url: string | null;
 }

@@ -31,7 +31,7 @@ class ExportController extends Controller
 
         $fileName = "report_{$request->year}_{$request->month}.csv";
 
-        return response()->streamDownload(function() use($transactions) {
+        return response()->streamDownload(function () use ($transactions) {
             $file = fopen('php://output', 'w');
             fputcsv($file, ['Date', 'Category', 'Description', 'Type', 'Amount']);
 
@@ -57,7 +57,7 @@ class ExportController extends Controller
     public function downloadPdf(Request $request)
     {
         $userId = auth()->id();
-        
+
         $transactions = Transaction::where('user_id', $userId)
             ->whereYear('created_at', $request->year)
             ->whereMonth('created_at', $request->month)
@@ -75,12 +75,15 @@ class ExportController extends Controller
         ]);
 
         $fileName = "Report-{$request->year}-{$request->month}.pdf";
+        $output = $pdf->output();
 
-        return response()->streamDownload(function () use ($pdf) {
-            echo $pdf->output();
-        }, $fileName, [
+        return response($output, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="'.$fileName.'"'
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Content-Length' => strlen($output),
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
         ]);
     }
 }
