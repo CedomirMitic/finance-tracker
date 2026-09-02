@@ -7,6 +7,8 @@ use App\Http\Controllers\TransactionController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 
 require __DIR__ . '/auth.php';
 
@@ -45,3 +47,16 @@ Route::post('/statistics/budget', [StatisticsController::class, 'updateBudget'])
 Route::get('/export', [ExportController::class, 'index'])->name('export.index');
 Route::get('/export/download', [ExportController::class, 'download'])->name('export.download');
 Route::get('/export/pdf', [ExportController::class, 'downloadPdf'])->name('export.pdf');
+
+// Automatic Subscription Checker
+
+Route::get('/run-cron-secure-token-12345', function () {
+    try {
+        Artisan::call('subscriptions:process');
+        Log::info('Subscriptions processed successfully via external cron.');
+        return response()->json(['status' => 'success', 'message' => 'Subscriptions processed.']);
+    } catch (\Exception $e) {
+        Log::error('Cron failed: ' . $e->getMessage());
+        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+    }
+});
