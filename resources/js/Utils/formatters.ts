@@ -1,8 +1,8 @@
 // resources/js/Utils/formatters.ts
-export const formatCurrency = (value: number) => {
+export const formatCurrency = (value: number, currency = 'EUR') => {
     const formatter = new Intl.NumberFormat(undefined, {
         style: 'currency',
-        currency: 'EUR',
+        currency: currency,
     });
 
     const parts = formatter.formatToParts(value);

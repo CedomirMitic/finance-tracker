@@ -26,10 +26,10 @@ class TransactionSeeder extends Seeder
 
         $categories = [
             ['name' => 'Salary', 'type' => 'income', 'min' => 3000, 'max' => 5000],
-            ['name' => 'Freelance', 'type' => 'income', 'min' => 400, 'max' => 1200],
-            ['name' => 'Rent', 'type' => 'expense', 'min' => 900, 'max' => 1100],
+            ['name' => 'Transport', 'type' => 'income', 'min' => 400, 'max' => 1200],
+            ['name' => 'Other', 'type' => 'expense', 'min' => 900, 'max' => 1100],
             ['name' => 'Food', 'type' => 'expense', 'min' => 50, 'max' => 150],
-            ['name' => 'Shopping', 'type' => 'expense', 'min' => 100, 'max' => 400],
+            ['name' => 'Bills', 'type' => 'expense', 'min' => 100, 'max' => 400],
             ['name' => 'Entertainment', 'type' => 'expense', 'min' => 50, 'max' => 200],
         ];
 
@@ -42,14 +42,22 @@ class TransactionSeeder extends Seeder
                 // we'll make one transaction "today" to fill your "Spent Today" stat.
                 $isCurrentMonth = ($i === 0);
 
+                $generatedAmount = rand($item['min'], $item['max']);
+                $currency = $user->preferred_currency ?? 'EUR';
+
+
+
                 Transaction::create([
                     'user_id' => $user->id,
                     'description' => "Monthly " . $item['name'],
-                    'amount' => rand($item['min'], $item['max']),
+                    'amount' => $generatedAmount,         
+                    'original_amount' => $generatedAmount, 
                     'type' => $item['type'],
                     'category' => $item['name'],
-                    'payment_type' => 'manual', 
-                    'billing_day' => null,     
+                    'payment_type' => 'manual',
+                    'currency' => $currency,
+                    'original_currency' => $currency, 
+                    'billing_day' => null,
                     'created_at' => $isCurrentMonth ? Carbon::now() : $month->copy()->subDays(rand(1, 28)),
                 ]);
             }

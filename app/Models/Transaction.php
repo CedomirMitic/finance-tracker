@@ -15,12 +15,17 @@ class Transaction extends Model
         'amount',
         'type',
         'category',
+        'currency',
+        'original_amount',
+        'original_currency',
         'payment_type',
-        'billing_day', 
+        'billing_day',
+        'imported_transaction_date',
     ];
 
+
     /**
-     *  Connection to user table
+     * Connection to user table
      */
     public function user()
     {

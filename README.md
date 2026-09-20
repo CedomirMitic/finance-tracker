@@ -1,6 +1,6 @@
 # 💰 Personal Finance Manager
 
-A modern, full-stack financial management application built with a focus on performance, type safety, and data visualization. This project demonstrates a "Modern Monolith" architecture by seamlessly connecting a robust Laravel backend with a reactive Vue 3 frontend.
+A modern, full-stack SaaS financial management application built with a focus on performance, type safety, security, data visualization, and seamless transactional workflows. This project demonstrates a robust "Modern Monolith" architecture by seamlessly connecting a production-ready Laravel backend with a reactive Vue 3 frontend.
 
 ## 🚀 Live Demo
 **URL:** [https://finance-tracker-cedomir.up.railway.app/](https://finance-tracker-cedomir.up.railway.app/)
@@ -11,56 +11,64 @@ A modern, full-stack financial management application built with a focus on perf
 
 ## 🚀 Key Features
 
-* **📊 Interactive Analytics:** High-level overview of Total Income, Total Expenses, and Net Balance using **ApexCharts**.
-* **📉 Smart Budgeting:** Set monthly limits for specific categories. Visual progress bars turn red when you exceed your budget.
-* **⏳ Automatic Subscriptions:** Automate recurring transactions like rent or subscriptions. The backend handles periodic entries without manual input.
-* **🔍 Transaction Drill-down:** Click on any category to instantly filter and view the specific transactions contributing to that total.
-* **📄 Data Export:** Generate professional **PDF reports** or **CSV files** for external analysis in Excel/Google Sheets.
+* **📊 Interactive Analytics:** High-level overview of Total Income, Total Expenses, and Net Balance powered by **ApexCharts**.
+* **📉 Smart Budgeting:** Set monthly limits for specific categories with real-time visual progress indicators.
+* **⏳ Automatic Subscriptions:** Automate recurring transactions like rent or subscriptions with flexible billing schedule management.
+* **🌍 Multi-Currency Support & Live Rates:** Seamlessly switch user currency in profile settings with automatic live conversion and rate updates powered by the **Frankfurter API** across the entire UI.
+* **📂 Smart PDF & CSV Bank Import:** Advanced file parser allowing users to upload any bank statement (PDF or CSV), dynamically map columns (Date, Amount, Description, Currency), and bulk-import transactions effortlessly.
+* **📧 Transactional Emails via Resend:** Reliable, modern email delivery for user verification flows, welcome messages, and account notifications powered by **Resend**.
+* **🔍 Transaction Drill-down:** Click on any category to instantly filter and inspect the specific transactions contributing to that total.
+* **📄 Advanced Data Export:** Generate professional **PDF reports** (Pro tier) or **CSV files** with instant client-side feedback and auto-dismissing notifications.
+* **💳 SaaS Billing & Subscriptions:** Fully integrated **Stripe Checkout and Customer Portal** supporting Free tier limits, Pro upgrades, and complete subscription lifecycle management via Laravel Cashier.
+* **🔒 Production Ready & Error Tracking:** Comprehensive backend error tracking and monitoring using **Sentry**, secure background job processing, and legal compliance pages (ToS & Privacy Policy).
 * **📱 Responsive UI:** Fully optimized for both desktop and mobile views using **Tailwind CSS**.
-
 
 ## 🛠 Tech Stack
 
-* **Backend:** Laravel 12.52.0 (PHP)
+* **Backend:** Laravel 12 (PHP)
 * **Frontend:** Vue 3 (Composition API) with TypeScript
 * **Bridge:** Inertia.js (Seamless SPA experience)
+* **Email Service:** Resend (Transactional emails)
 * **Styling:** Tailwind CSS
-* **Build Tool:** Vite 6.4 (Latest major version)
-* **Database:** MySQL (Hosted on Aiven for production)
-* **Key Libraries:**
+* **Build Tool:** Vite
+* **Database & Billing:** MySQL (Aiven) & Stripe (Laravel Cashier)
+* **Key Libraries & Services:**
     * `barryvdh/laravel-dompdf` (PDF Generation)
     * `vue3-apexcharts` (Data Visualization)
-
+    * `ziggy-js` (Named Laravel routes in TypeScript)
+    * Sentry (Backend Error Monitoring)
+    * Frankfurter API (Foreign Exchange & Multi-currency rates)
 
 ## 🌐 Production Deployment
 
-This application is optimized for **Railway** and **Aiven**.
+This application is optimized for cloud infrastructure (**Railway** & **Aiven**).
 
-- **Environment Sync:** Uses `VITE_APP_NAME="${APP_NAME}"` to ensure consistent branding across PHP and JavaScript.
-- **Security:** Forced HTTPS scheme in production via `AppServiceProvider` to ensure secure asset loading.
-- **CI/CD:** Automatic builds using Railway's Nixpacks, triggered on every `git push`.
-- **Database:** Remote MySQL integration with SSL for secure cloud data management.
+- **Environment Sync:** Uses consistent branding and configurations across PHP and JavaScript layers.
+- **Security:** Forced HTTPS scheme in production via `AppServiceProvider` to ensure secure asset loading and seamless Stripe webhook processing.
+- **CI/CD:** Automatic builds using Railway's Nixpacks, triggered on every push to the main branch.
+- **Background Processing & Queues:** Dedicated queue workers handling currency synchronization jobs and heavy bank import parsing tasks asynchronously.
+
 ## 📦 Installation & Setup
 
-1.  **Clone the repository:**
+1. **Clone the repository:**
     ```bash
-    git clone [https://github.com/CedomirMitic/finance-tracker.git]
+    git clone [https://github.com/CedomirMitic/finance-tracker.git](https://github.com/CedomirMitic/finance-tracker.git)
     cd finance-tracker
     ```
 
-2.  **Install dependencies:**
+2. **Install dependencies:**
     ```bash
     composer install
     npm install
     ```
 
-3.  **Environment configuration:**
+3. **Environment configuration:**
     ```bash
     cp .env.example .env
     php artisan key:generate
     ```
 
-4.  **Run migrations:**
+4. **Run migrations:**
     ```bash
     php artisan migrate
     ```
@@ -70,13 +78,14 @@ This application is optimized for **Railway** and **Aiven**.
     npm run build
     ```
 
-6.  **Launch for Development**
+6. **Launch for Development**
     ```bash
     # Terminal 1: Laravel Server
     php artisan serve
     
     # Terminal 2: Vite Hot Module Replacement (HMR)
     npm run dev
+
+    # Terminal 3: Laravel Queue Worker (For background jobs and imports)
+    php artisan queue:work
     ```
-    
-**Build with ❤️ using Laravel & Vue.**

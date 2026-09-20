@@ -47,7 +47,7 @@ class DashboardController extends Controller
         ->where('user_id', $user->id)
         ->where('created_at', '>=', Carbon::now()->subMonths(6))
         ->groupBy('month')
-        ->orderBy('month', 'asc') // Dodato da bi grafik išao hronološki
+        ->orderBy('month', 'asc')
         ->get();
 
     return Inertia::render('Dashboard', [

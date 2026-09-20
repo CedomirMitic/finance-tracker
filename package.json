@@ -24,6 +24,7 @@
         "vue-tsc": "^3.2.5"
     },
     "dependencies": {
+        "@vueform/multiselect": "^2.6.11",
         "apexcharts": "^5.10.1",
         "qs-esm": "^7.0.3",
         "vue3-apexcharts": "^1.11.1"

@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Modal from '@/Components/Modal.vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { formatCurrency } from '@/Utils/formatters';
 import { computed, ref } from 'vue';
 import type { ApexOptions } from 'apexcharts';
 import VueApexCharts from "vue3-apexcharts";
+import { PageProps } from '@/types';
 
 const props = defineProps<{
     stats: Array<{ category: string, total: string }>,
     budgets: Record<string, number>,
-    transactions: Array<{ id: number, category: string, description: string, amount: string, type: string, created_at: string }>,
+    transactions: Array<{ id: number, category: string, description: string, amount: string, type: string, created_at: string, display_amount: Number }>,
     totalIncome: number,
     totalExpenses: number,
     availableYears: number[],
@@ -19,9 +20,14 @@ const props = defineProps<{
     selectedMonth: string
 }>();
 
+const page = usePage<PageProps>();
+const userCurrency = computed(() => page.props.auth.user?.preferred_currency ?? 'EUR');
+const user = computed(() => page.props.auth.user);
+
 const selectedYear = ref(props.selectedYear);
 const selectedMonth = ref(props.selectedMonth);
 const showingModal = ref(false);
+const showProModal = ref(false);
 const activeCategory = ref<string | null>(null);
 
 const budgetForm = useForm({
@@ -50,6 +56,11 @@ const toggleCategory = (category: string) => {
 };
 
 const openBudgetModal = (category: string) => {
+    if (!user.value?.subscribed) {
+        showProModal.value = true;
+        return;
+    }
+
     budgetForm.category = category;
     budgetForm.amount = props.budgets[category] || 0;
     showingModal.value = true;
@@ -63,15 +74,19 @@ const submitBudget = () => {
     });
 };
 
+const redirectToUpgrade = () => {
+    showProModal.value = false;
+    router.visit(route('billing.index'));
+};
+
 const chartOptions = computed<ApexOptions>(() => ({
     labels: props.stats.map(item => item.category),
-    chart: { 
-        type: 'donut', 
+    chart: {
+        type: 'donut',
         animations: { enabled: true, speed: 800 },
-        sparkline: { enabled: false } 
+        sparkline: { enabled: false }
     },
-    // Isključujemo legendu unutar grafikona da bi krug bio veći
-    legend: { show: false }, 
+    legend: { show: false },
     dataLabels: { enabled: false },
     tooltip: { y: { formatter: (value: number) => formatCurrency(value) } },
     plotOptions: {
@@ -87,11 +102,11 @@ const chartOptions = computed<ApexOptions>(() => ({
                         fontSize: '12px',
                         formatter: (w) => formatCurrency(w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0))
                     },
-                    value: { 
-                        show: true, 
-                        fontSize: '20px', 
+                    value: {
+                        show: true,
+                        fontSize: '20px',
                         fontWeight: '900',
-                        formatter: (val: string) => formatCurrency(Number(val)) 
+                        formatter: (val: string) => formatCurrency(Number(val))
                     }
                 }
             }
@@ -105,16 +120,19 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
 </script>
 
 <template>
+
     <Head title="Statistics" />
     <AuthenticatedLayout>
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-md sm:text-xl text-gray-800 leading-tight">Financial Statistics</h2>
                 <div class="flex items-center gap-2 sm:gap-4">
-                    <select v-model="selectedMonth" @change="updateStats" class="rounded-md border-gray-300 shadow-sm py-1 text-sm">
+                    <select v-model="selectedMonth" @change="updateStats"
+                        class="rounded-md border-gray-300 shadow-sm py-1 text-sm">
                         <option v-for="m in months" :key="m.value" :value="m.value">{{ m.label }}</option>
                     </select>
-                    <select v-model="selectedYear" @change="updateStats" class="rounded-md border-gray-300 shadow-sm py-1 text-sm">
+                    <select v-model="selectedYear" @change="updateStats"
+                        class="rounded-md border-gray-300 shadow-sm py-1 text-sm">
                         <option v-for="y in availableYears" :key="y" :value="y">{{ y }}</option>
                     </select>
                 </div>
@@ -126,35 +144,36 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 text-center md:text-left">
                         <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Income</p>
-                        <p class="text-2xl font-black text-green-600">{{ formatCurrency(totalIncome) }}</p>
+                        <p class="text-2xl font-black text-green-600">{{ formatCurrency(totalIncome, userCurrency) }}
+                        </p>
                     </div>
                     <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500 text-center md:text-left">
                         <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Expenses</p>
-                        <p class="text-2xl font-black text-red-600">{{ formatCurrency(totalExpenses) }}</p>
+                        <p class="text-2xl font-black text-red-600">{{ formatCurrency(totalExpenses, userCurrency) }}
+                        </p>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 text-center md:text-left" :class="netBalance >= 0 ? 'border-indigo-500' : 'border-orange-500'">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 text-center md:text-left"
+                        :class="netBalance >= 0 ? 'border-indigo-500' : 'border-orange-500'">
                         <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Net Balance</p>
-                        <p class="text-2xl font-black" :class="netBalance >= 0 ? 'text-indigo-600' : 'text-orange-600'">{{ formatCurrency(netBalance) }}</p>
+                        <p class="text-2xl font-black" :class="netBalance >= 0 ? 'text-indigo-600' : 'text-orange-600'">
+                            {{
+                                formatCurrency(netBalance, userCurrency) }}</p>
                     </div>
                 </div>
 
                 <div class="bg-white shadow-sm rounded-xl p-4 sm:p-8 mb-8 overflow-hidden">
                     <div v-if="series.length > 0">
                         <div class="flex flex-col lg:flex-row items-center justify-between gap-10">
-                            
+
                             <div class="w-full lg:w-1/2 flex justify-center">
                                 <div class="w-full relative mx-auto" style="max-width: 400px;">
-                                    <VueApexCharts 
-                                        type="donut" 
-                                        width="100%" 
-                                        :options="chartOptions" 
-                                        :series="series" 
-                                    />
+                                    <VueApexCharts type="donut" width="100%" :options="chartOptions" :series="series" />
                                 </div>
                             </div>
 
                             <div class="flex-1 w-full max-w-md lg:max-w-none">
-                                <h4 class="text-xs font-bold text-gray-400 uppercase mb-6 tracking-widest text-center lg:text-left underline decoration-indigo-200 underline-offset-8">
+                                <h4
+                                    class="text-xs font-bold text-gray-400 uppercase mb-6 tracking-widest text-center lg:text-left underline decoration-indigo-200 underline-offset-8">
                                     Expense Breakdown
                                 </h4>
                                 <div class="space-y-6">
@@ -162,14 +181,20 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
                                         @click="toggleCategory(item.category)"
                                         class="group cursor-pointer p-3 -mx-2 rounded-xl transition hover:bg-gray-50"
                                         :class="{ 'bg-indigo-50 ring-1 ring-indigo-100': activeCategory === item.category }">
-                                        
+
                                         <div class="flex justify-between items-center text-sm mb-2">
-                                            <span class="font-bold text-gray-700 capitalize flex items-center min-w-0 flex-1 mr-2">
+                                            <span
+                                                class="font-bold text-gray-700 capitalize flex items-center min-w-0 flex-1 mr-2">
                                                 <span class="truncate">{{ item.category }}</span>
                                                 <button @click.stop="openBudgetModal(item.category)" type="button"
-                                                    class="ml-2 flex-shrink-0 text-[9px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-400 hover:bg-indigo-600 hover:text-white transition uppercase font-bold">Budget</button>
+                                                    class="ml-2 flex-shrink-0 text-[9px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-400 hover:bg-indigo-600 hover:text-white transition uppercase font-bold flex items-center gap-1">
+                                                    Budget
+                                                    <span v-if="!user?.subscribed"
+                                                        class="text-[8px] bg-amber-100 text-amber-700 px-1 rounded">PRO</span>
+                                                </button>
                                             </span>
-                                            <span class="text-gray-900 font-black flex-shrink-0">{{ formatCurrency(Number(item.total)) }}</span>
+                                            <span class="text-gray-900 font-black flex-shrink-0">{{
+                                                formatCurrency(Number(item.total), userCurrency) }}</span>
                                         </div>
 
                                         <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
@@ -181,9 +206,14 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
 
                                         <div class="flex justify-between mt-1 min-h-[14px]">
                                             <div v-if="budgets[item.category] > 0" class="text-[10px] italic">
-                                                <span class="text-gray-400">Limit: {{ formatCurrency(budgets[item.category]) }}</span>
-                                                <span v-if="Number(item.total) > budgets[item.category]" class="text-red-500 font-bold ml-1">
-                                                    (Over by {{ formatCurrency(Number(item.total) - budgets[item.category]) }})
+                                                <span class="text-gray-400">Limit: {{
+                                                    formatCurrency(budgets[item.category],
+                                                    userCurrency) }}</span>
+                                                <span v-if="Number(item.total) > budgets[item.category]"
+                                                    class="text-red-500 font-bold ml-1">
+                                                    (Over by {{ formatCurrency(Number(item.total) -
+                                                        budgets[item.category],
+                                                        userCurrency) }})
                                                 </span>
                                             </div>
                                             <p v-else class="text-[10px] text-gray-300 italic">No limit set</p>
@@ -203,7 +233,8 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
                             <h3 class="text-lg font-bold text-gray-800">
                                 Details for <span class="capitalize text-indigo-600">{{ activeCategory }}</span>
                             </h3>
-                            <button @click="activeCategory = null" class="text-gray-400 hover:text-gray-600 text-sm font-bold">&times; Close</button>
+                            <button @click="activeCategory = null"
+                                class="text-gray-400 hover:text-gray-600 text-sm font-bold">&times; Close</button>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-sm">
@@ -214,9 +245,12 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y">
-                                    <tr v-for="t in filteredTransactions" :key="t.id" class="hover:bg-gray-50 transition">
+                                    <tr v-for="t in filteredTransactions" :key="t.id"
+                                        class="hover:bg-gray-50 transition">
                                         <td class="py-3 font-medium text-gray-700">{{ t.description }}</td>
-                                        <td class="py-3 text-right font-black text-red-500">{{ formatCurrency(Number(t.amount)) }}</td>
+                                        <td class="py-3 text-right font-black text-red-500">{{
+                                            formatCurrency(Number(t.amount),
+                                                userCurrency) }}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -226,18 +260,48 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
             </div>
         </div>
 
-        <Modal :show="showingModal" @close="showingModal = false">
+        <Modal :show="showingModal" @close="showingModal = false" max-width="md">
             <div class="p-6">
                 <h2 class="text-lg font-black text-gray-900 capitalize text-center mb-6 border-b pb-4">
                     Budget for {{ budgetForm.category }}
                 </h2>
+
                 <div class="mb-6">
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Monthly Limit (€)</label>
-                    <input v-model="budgetForm.amount" type="number" step="0.01" class="w-full border-gray-200 rounded-lg focus:ring-indigo-500 p-3" />
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Monthly Limit</label>
+
+                    <div class="relative flex items-center">
+                        <input v-model="budgetForm.amount" type="number" step="0.01"
+                            class="w-full border-gray-200 rounded-lg focus:ring-indigo-500 p-3 pr-16" />
+                        <span class="absolute right-4 text-sm font-bold text-gray-400">
+                            {{ userCurrency }}
+                        </span>
+                    </div>
                 </div>
+
                 <div class="flex gap-3">
-                    <button @click="showingModal = false" class="flex-1 py-3 text-sm font-bold text-gray-500 bg-gray-50 rounded-lg hover:bg-gray-100 transition">Cancel</button>
-                    <button @click="submitBudget" class="flex-1 py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition">Save</button>
+                    <button @click="showingModal = false"
+                        class="flex-1 py-3 text-sm font-bold text-gray-500 bg-gray-50 rounded-lg hover:bg-gray-100 transition">Cancel</button>
+                    <button @click="submitBudget"
+                        class="flex-1 py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition">Save</button>
+                </div>
+            </div>
+        </Modal>
+
+        <Modal :show="showProModal" @close="showProModal = false" max-width="md">
+            <div class="p-6 text-center">
+                <div
+                    class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+                    ⭐</div>
+                <h2 class="text-lg font-black text-gray-900 mb-2">PRO Feature</h2>
+                <p class="text-sm text-gray-500 mb-6">Setting category budgets and tracking limits is exclusively
+                    available for
+                    PRO members. Upgrade your account to unlock this feature.</p>
+                <div class="flex gap-3">
+                    <button @click="showProModal = false"
+                        class="flex-1 py-3 text-sm font-bold text-gray-500 bg-gray-50 rounded-lg hover:bg-gray-100 transition">Close</button>
+                    <button @click="redirectToUpgrade"
+                        class="flex-1 py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition">Upgrade
+                        to PRO</button>
                 </div>
             </div>
         </Modal>

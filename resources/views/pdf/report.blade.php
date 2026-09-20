@@ -47,7 +47,9 @@
             @foreach($transactions->where('type', 'expense')->groupBy('category') as $category => $items)
                 <tr>
                     <td style="text-transform: capitalize;">{{ $category }}</td>
-                    <td style="text-align: right; font-weight: bold;">{{ number_format($items->sum('amount'), 2) }} €</td>
+                    <td style="text-align: right; font-weight: bold;">
+                        {{ number_format($items->sum('amount'), 2) }} {{ $items->first()->currency }}
+                    </td>
                 </tr>
             @endforeach
         </tbody>
@@ -70,7 +72,7 @@
                     <td style="text-transform: capitalize; color: #6b7280;">{{ $t->category }}</td>
                     <td>{{ $t->description }}</td>
                     <td class="amount {{ $t->type === 'expense' ? 'expense' : 'income' }}">
-                        {{ $t->type === 'expense' ? '-' : '+' }}{{ number_format($t->amount, 2) }} €
+                        {{ $t->type === 'expense' ? '-' : '+' }}{{ number_format($t->amount, 2) }} {{ $t->currency }}
                     </td>
                 </tr>
             @endforeach
@@ -78,12 +80,15 @@
     </table>
 
     <div class="footer-totals">
-        <p>Total Income: <span class="income">+{{ number_format($totalIncome, 2) }} €</span></p>
-        <p>Total Expenses: <span class="expense">-{{ number_format($totalExpenses, 2) }} €</span></p>
+        {{-- Ako imaš prosleđenu varijablu sa valutom korisnika, zameni $transactions->first()->currency sa npr. $userCurrency --}}
+        @php $currency = $transactions->first()->currency ?? 'EUR'; @endphp
+        
+        <p>Total Income: <span class="income">+{{ number_format($totalIncome, 2) }} {{ $currency }}</span></p>
+        <p>Total Expenses: <span class="expense">-{{ number_format($totalExpenses, 2) }} {{ $currency }}</span></p>
         <div class="grand-total">
             Net Balance: 
             <span class="{{ ($totalIncome - $totalExpenses) >= 0 ? 'income' : 'expense' }}">
-                {{ number_format($totalIncome - $totalExpenses, 2) }} €
+                {{ number_format($totalIncome - $totalExpenses, 2) }} {{ $currency }}
             </span>
         </div>
     </div>

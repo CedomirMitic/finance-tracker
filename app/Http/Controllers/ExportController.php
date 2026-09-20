@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Transaction;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
 class ExportController extends Controller
@@ -33,7 +34,7 @@ class ExportController extends Controller
 
         return response()->streamDownload(function () use ($transactions) {
             $file = fopen('php://output', 'w');
-            fputcsv($file, ['Date', 'Category', 'Description', 'Type', 'Amount']);
+            fputcsv($file, ['Date', 'Category', 'Description', 'Type', 'Amount', 'Currency']);
 
             foreach ($transactions as $t) {
                 fputcsv($file, [
@@ -41,7 +42,8 @@ class ExportController extends Controller
                     $t->category,
                     $t->description,
                     $t->type,
-                    $t->amount
+                    $t->amount,
+                    $t->currency,
                 ]);
             }
             fclose($file);
@@ -56,6 +58,10 @@ class ExportController extends Controller
 
     public function downloadPdf(Request $request)
     {
+
+        if (!Gate::allows('pro-user')) {
+            abort(403, 'Ova opcija je rezervisana samo za Pro korisnike.');
+        }
         $userId = auth()->id();
 
         $transactions = Transaction::where('user_id', $userId)

@@ -1,11 +1,12 @@
 <script setup lang="ts">
-declare function route(name?: string, params?: any): string;
+declare function route(name?: string, params?: any): string;[]
 import type { ApexOptions } from 'apexcharts';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage} from '@inertiajs/vue3';
 import { formatCurrency } from '@/Utils/formatters';
 import { computed } from 'vue';
 import VueApexCharts from "vue3-apexcharts";
+import { PageProps } from '@/types';
 
 const props = defineProps<{
     stats: { spentToday: number, monthlyIncome: number, monthlyExpenses: number, savings: number },
@@ -13,9 +14,12 @@ const props = defineProps<{
     trend: Array<{ month: string, income: number, expense: number }>
 }>();
 
+const page = usePage<PageProps>();
+const userCurrency = computed(() => page.props.auth.user?.preferred_currency ?? 'EUR');
+
 const chartOptions: ApexOptions = {
     chart: {
-        type: 'bar', // Now TypeScript knows this 'bar' is a valid ApexChart type
+        type: 'bar', 
         toolbar: { show: false }
     },
     plotOptions: {
@@ -58,19 +62,19 @@ const series = [
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Spent Today</p>
-                        <p class="text-2xl font-black text-red-500">{{ formatCurrency(stats.spentToday) }}</p>
+                        <p class="text-2xl font-black text-red-500">{{ formatCurrency(stats.spentToday, userCurrency) }}</p>
                     </div>
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Monthly Income</p>
-                        <p class="text-2xl font-black text-green-500">{{ formatCurrency(stats.monthlyIncome) }}</p>
+                        <p class="text-2xl font-black text-green-500">{{ formatCurrency(stats.monthlyIncome, userCurrency) }}</p>
                     </div>
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Monthly Expenses</p>
-                        <p class="text-2xl font-black text-gray-800">{{ formatCurrency(stats.monthlyExpenses) }}</p>
+                        <p class="text-2xl font-black text-gray-800">{{ formatCurrency(stats.monthlyExpenses, userCurrency) }}</p>
                     </div>
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-indigo-100 bg-indigo-50/30">
                         <p class="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">Savings</p>
-                        <p class="text-2xl font-black text-indigo-600">{{ formatCurrency(stats.savings) }}</p>
+                        <p class="text-2xl font-black text-indigo-600">{{ formatCurrency(stats.savings, userCurrency) }}</p>
                     </div>
                 </div>
 
@@ -98,7 +102,7 @@ const series = [
                                 </div>
                                 <p :class="t.type === 'expense' ? 'text-red-500' : 'text-green-500'"
                                     class="font-black text-sm">
-                                    {{ t.type === 'expense' ? '-' : '+' }}{{ formatCurrency(Number(t.amount)) }}
+                                    {{ t.type === 'expense' ? '-' : '+' }}{{ formatCurrency(Number(t.display_amount ?? t.amount), userCurrency) }}
                                 </p>
                             </div>
                             <div v-if="recentTransactions.length === 0"

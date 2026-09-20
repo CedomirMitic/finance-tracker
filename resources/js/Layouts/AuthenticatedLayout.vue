@@ -5,9 +5,15 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
+import FlashMessage from '@/Components/FlashMessages.vue';
+import { useAutoDismissFlash } from '@/Utils/flash';
 import { Link } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
+
+//Activate timer for toast messages
+useAutoDismissFlash();
+
 </script>
 
 <template>
@@ -26,9 +32,12 @@ const showingNavigationDropdown = ref(false);
 
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
 
-                                <NavLink :href="route('dashboard')"
-                                    :active="route().current('dashboard')">
+                                <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
                                     Dashboard
+                                </NavLink>
+
+                                <NavLink :href="route('billing.index')" :active="route().current('billing.index')">
+                                    Upgrade
                                 </NavLink>
 
                                 <NavLink :href="route('transactions.index')"
@@ -109,6 +118,13 @@ const showingNavigationDropdown = ref(false);
                     block: showingNavigationDropdown,
                     hidden: !showingNavigationDropdown,
                 }" class="sm:hidden">
+
+                    <div class="space-y-1 pb-3 pt-2">
+                        <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
+                            Dashboard
+                        </ResponsiveNavLink>
+                    </div>
+
                     <div class="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink :href="route('transactions.index')"
                             :active="route().current('transactions.index')">
@@ -117,9 +133,9 @@ const showingNavigationDropdown = ref(false);
                     </div>
 
                     <div class="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink :href="route('dashboard')"
-                            :active="route().current('dashboard')">
-                            Dashboard
+                        <ResponsiveNavLink :href="route('billing.index')"
+                            :active="route().current('billing.index')">
+                            Upgrade
                         </ResponsiveNavLink>
                     </div>
 
@@ -168,6 +184,10 @@ const showingNavigationDropdown = ref(false);
 
             <!-- Page Content -->
             <main>
+                <div class="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+                    <FlashMessage />
+                </div>
+
                 <slot />
             </main>
         </div>
