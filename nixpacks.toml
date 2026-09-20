@@ -1,2 +1,2 @@
 [phases.setup]
-phpExtensions = ["mbstring", "xml", "bcmath", "gd", "pdo_mysql", "curl", "openssl", "zip"]
+nixPkgs = ["php", "composer", "php83Extensions.bcmath", "php83Extensions.gd", "php83Extensions.mbstring", "php83Extensions.xml", "php83Extensions.curl", "php83Extensions.zip"]
