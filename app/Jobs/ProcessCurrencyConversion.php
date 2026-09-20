@@ -41,7 +41,8 @@ class ProcessCurrencyConversion implements ShouldQueue
                     $from = $transaction->original_currency ?? $transaction->currency;
                     $sourceAmount = $transaction->original_amount ?? $transaction->amount;
                     $to = $newCurrency;
-                    $date = $transaction->created_at ? $transaction->created_at->toDateString() : now()->toDateString();
+                    $rawDate = $transaction->imported_transaction_date ?? $transaction->created_at;
+                    $date = $rawDate ? Carbon::parse($rawDate)->toDateString() : now()->toDateString();
 
                     $rate = $this->getExchangeRate($from, $to, $date, $rateCache);
 
@@ -66,20 +67,26 @@ class ProcessCurrencyConversion implements ShouldQueue
         if ($from === $to)
             return 1;
 
-        // Check if date is weekend day 
+        // Osiguraj da je datum u YYYY-MM-DD formatu
         $carbonDate = Carbon::parse($date);
+
+        // Ako je transakcija pala u vikend, vrati na poslednji petak jer berze ne rade
         if ($carbonDate->isWeekend()) {
-            // If its weekend set date to friday
             $carbonDate->previous('friday');
-            $date = $carbonDate->toDateString();
         }
 
-        $cacheKey = "{$from}_{$to}_{$date}";
+        $formattedDate = $carbonDate->toDateString(); // Daje npr. "2026-06-15"
+        $cacheKey = "{$from}_{$to}_{$formattedDate}";
+
+        \Log::info("Generisan cache key: {$cacheKey}");
+
+
         if (isset($rateCache[$cacheKey]))
             return $rateCache[$cacheKey];
 
         try {
-            $response = Http::get("https://api.frankfurter.dev/{$date}", [
+            // Ispravna putanja sa /v1/ i formatom YYYY-MM-DD
+            $response = Http::get("https://api.frankfurter.dev/v1/{$formattedDate}", [
                 'from' => $from,
                 'to' => $to,
             ]);
@@ -92,12 +99,13 @@ class ProcessCurrencyConversion implements ShouldQueue
                 }
             }
         } catch (\Exception $e) {
-            \Log::warning("Exchange rate API error for {$from} to {$to} on {$date}: " . $e->getMessage());
+            \Log::warning("Historical exchange rate error for {$formattedDate}: " . $e->getMessage());
         }
 
-        // if it still fails take latest exchange rate 
+        // Ako iz nekog razloga tog specifičnog dana nema kursa (npr. praznik), 
+        // tek onda fallback na /latest da aplikacija ne pukne
         try {
-            $response = Http::get("https://api.frankfurter.dev/latest", [
+            $response = Http::get("https://api.frankfurter.dev/v1/latest", [
                 'from' => $from,
                 'to' => $to,
             ]);
@@ -110,7 +118,6 @@ class ProcessCurrencyConversion implements ShouldQueue
         } catch (\Exception $e) {
         }
 
-        // If everything fails return 1/1 
         return 1;
     }
 
