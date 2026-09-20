@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Transaction;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -65,6 +66,14 @@ class ProcessCurrencyConversion implements ShouldQueue
         if ($from === $to)
             return 1;
 
+        // Check if date is weekend day 
+        $carbonDate = Carbon::parse($date);
+        if ($carbonDate->isWeekend()) {
+            // If its weekend set date to friday
+            $carbonDate->previous('friday');
+            $date = $carbonDate->toDateString();
+        }
+
         $cacheKey = "{$from}_{$to}_{$date}";
         if (isset($rateCache[$cacheKey]))
             return $rateCache[$cacheKey];
@@ -76,13 +85,32 @@ class ProcessCurrencyConversion implements ShouldQueue
             ]);
 
             if ($response->successful()) {
-                $rate = $response->json("rates.{$to}") ?? 1;
-                $rateCache[$cacheKey] = $rate;
-                return $rate;
+                $rate = $response->json("rates.{$to}");
+                if ($rate) {
+                    $rateCache[$cacheKey] = $rate;
+                    return $rate;
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning("Exchange rate API error for {$from} to {$to} on {$date}: " . $e->getMessage());
+        }
+
+        // if it still fails take latest exchange rate 
+        try {
+            $response = Http::get("https://api.frankfurter.dev/latest", [
+                'from' => $from,
+                'to' => $to,
+            ]);
+            if ($response->successful()) {
+                $rate = $response->json("rates.{$to}");
+                if ($rate) {
+                    return $rate;
+                }
             }
         } catch (\Exception $e) {
         }
 
+        // If everything fails return 1/1 
         return 1;
     }
 
