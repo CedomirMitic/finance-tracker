@@ -78,9 +78,6 @@ class ProcessCurrencyConversion implements ShouldQueue
         $formattedDate = $carbonDate->toDateString(); // Daje npr. "2026-06-15"
         $cacheKey = "{$from}_{$to}_{$formattedDate}";
 
-        \Log::info("Generisan cache key: {$cacheKey}");
-
-
         if (isset($rateCache[$cacheKey]))
             return $rateCache[$cacheKey];
 
@@ -90,6 +87,9 @@ class ProcessCurrencyConversion implements ShouldQueue
                 'from' => $from,
                 'to' => $to,
             ]);
+
+            \Log::info("Railway API Response Status: " . $response->status() . " for date {$formattedDate} and currency {$from} -> {$to}");
+            \Log::info("Railway API Response Body: " . $response->body());
 
             if ($response->successful()) {
                 $rate = $response->json("rates.{$to}");
