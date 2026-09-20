@@ -67,29 +67,26 @@ class ProcessCurrencyConversion implements ShouldQueue
         if ($from === $to)
             return 1;
 
-        // Osiguraj da je datum u YYYY-MM-DD formatu
+        // Make sure it is  YYYY-MM-DD format
         $carbonDate = Carbon::parse($date);
 
-        // Ako je transakcija pala u vikend, vrati na poslednji petak jer berze ne rade
+        // If transaction date is weekend go back to friday rates
         if ($carbonDate->isWeekend()) {
             $carbonDate->previous('friday');
         }
 
-        $formattedDate = $carbonDate->toDateString(); // Daje npr. "2026-06-15"
+        $formattedDate = $carbonDate->toDateString(); // Gets "2026-06-15"
         $cacheKey = "{$from}_{$to}_{$formattedDate}";
 
         if (isset($rateCache[$cacheKey]))
             return $rateCache[$cacheKey];
 
         try {
-            // Ispravna putanja sa /v1/ i formatom YYYY-MM-DD
+            
             $response = Http::get("https://api.frankfurter.dev/v1/{$formattedDate}", [
                 'from' => $from,
                 'to' => $to,
             ]);
-
-            \Log::info("Railway API Response Status: " . $response->status() . " for date {$formattedDate} and currency {$from} -> {$to}");
-            \Log::info("Railway API Response Body: " . $response->body());
 
             if ($response->successful()) {
                 $rate = $response->json("rates.{$to}");
@@ -102,8 +99,7 @@ class ProcessCurrencyConversion implements ShouldQueue
             \Log::warning("Historical exchange rate error for {$formattedDate}: " . $e->getMessage());
         }
 
-        // Ako iz nekog razloga tog specifičnog dana nema kursa (npr. praznik), 
-        // tek onda fallback na /latest da aplikacija ne pukne
+        // If theres not rate for that specific date take latest
         try {
             $response = Http::get("https://api.frankfurter.dev/v1/latest", [
                 'from' => $from,
