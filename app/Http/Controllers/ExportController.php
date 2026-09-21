@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Transaction;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -60,12 +59,7 @@ class ExportController extends Controller
 
         if (!Gate::allows('pro-user')) {
             abort(403, 'PDF Export is restricted to Pro users.');
-        }
 
-        $request->validate([
-            'month' => 'required|integer|between:1,12',
-            'year' => 'required|integer|digits:4',
-        ]);
 
         $transactions = $request->user()->transactions()
             ->whereYear('created_at', $request->year)
