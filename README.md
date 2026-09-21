@@ -57,9 +57,8 @@ A modern, full-stack SaaS financial management application built with a focus on
 ---
 
 📦 Installation & Setup
-
-1. Clone the repository:
 ```bash
+1. Clone the repository:
 git clone [https://github.com/CedomirMitic/finance-tracker.git](https://github.com/CedomirMitic/finance-tracker.git)
 cd finance-tracker
 
