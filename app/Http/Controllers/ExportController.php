@@ -59,6 +59,7 @@ class ExportController extends Controller
 
         if (!Gate::allows('pro-user')) {
             abort(403, 'PDF Export is restricted to Pro users.');
+        }
 
 
         $transactions = $request->user()->transactions()
