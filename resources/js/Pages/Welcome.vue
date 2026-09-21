@@ -169,7 +169,7 @@ const user = computed(() => page.props.auth.user);
                     <div>
                         <div class="font-black text-xl mb-1 text-white">Pro</div>
                         <p class="text-sm text-indigo-200 mb-6">No limits and full control over your finances.</p>
-                        <div class="text-4xl font-black mb-6">$9 <span class="text-sm font-normal text-indigo-300">/ month</span></div>
+                        <div class="text-4xl font-black mb-6">$7.99 <span class="text-sm font-normal text-indigo-300">/ month</span></div>
                         <ul class="space-y-3 text-sm text-indigo-100 mb-8">
                             <li class="flex items-center gap-2">✓ Unlimited transactions</li>
                             <li class="flex items-center gap-2">✓ Advanced Budgets</li>
