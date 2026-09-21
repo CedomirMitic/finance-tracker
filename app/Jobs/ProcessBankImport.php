@@ -32,14 +32,14 @@ class ProcessBankImport implements ShouldQueue
     public function handle(): void
     {
         $user = User::find($this->userId);
+
+        if (!$user) {
+            return;
+        }
+
         $user->update(['background_status' => true]);
 
         try {
-            if (!$user) {
-                return;
-            }
-
-
             $targetCurrency = strtoupper($user->preferred_currency ?? 'EUR');
             $rateCache = [];
             $count = 0;
@@ -59,7 +59,7 @@ class ProcessBankImport implements ShouldQueue
                     continue;
                 }
 
-                // Universal amount parsing
+                
                 $cleanAmountStr = preg_replace('/[^\d.,-]/', '', str_replace([' ', 'RSD', 'EUR', 'USD', '$', '€'], '', $rawAmount));
 
                 if (strpos($cleanAmountStr, ',') !== false && strpos($cleanAmountStr, '.') !== false) {
@@ -75,7 +75,7 @@ class ProcessBankImport implements ShouldQueue
                 $sourceAmount = abs($cleanAmount);
                 $amountInTarget = $sourceAmount;
 
-                // Convert from import currency to user preffered one
+                
                 if ($this->importCurrency !== $targetCurrency) {
                     $cacheKey = "{$transactionDate}_{$this->importCurrency}_{$targetCurrency}";
 
@@ -100,8 +100,8 @@ class ProcessBankImport implements ShouldQueue
                 Transaction::create([
                     'user_id' => $user->id,
                     'imported_transaction_date' => $transactionDate,
-                    'amount' => round($amountInTarget, 2),    // Converted amount in preffered currency
-                    'currency' => $targetCurrency,           // Users preffered currency
+                    'amount' => round($amountInTarget, 2),    // Converted amount in preferred currency
+                    'currency' => $targetCurrency,          // Users preferred currency
                     'original_amount' => $sourceAmount,       // Original amount from file
                     'original_currency' => $this->importCurrency, // Original currency from file
                     'type' => $cleanAmount < 0 ? 'expense' : 'income',
@@ -114,17 +114,15 @@ class ProcessBankImport implements ShouldQueue
                 $count++;
             }
 
-
             Log::info("Successfully imported {$count} transactions for user ID: {$user->id}");
         } catch (\Exception $e) {
-            \Log::error("Error while trying to execute a job: " . $e->getMessage() . " on line " . $e->getLine());
+            Log::error("Error while trying to execute a job: " . $e->getMessage() . " on line " . $e->getLine());
             throw $e;
         } finally {
             $user->update(['background_status' => false]);
         }
     }
 
-    // Safety net if job fails
     public function failed(\Throwable $exception)
     {
         $user = User::find($this->userId);

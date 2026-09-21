@@ -11,7 +11,7 @@ import { PageProps } from '@/types';
 const props = defineProps<{
     stats: Array<{ category: string, total: string }>,
     budgets: Record<string, number>,
-    transactions: Array<{ id: number, category: string, description: string, amount: string, type: string, created_at: string, display_amount: Number }>,
+    transactions: Array<{ id: number, category: string, description: string, amount: string, type: string, created_at: string, display_amount: number }>,
     totalIncome: number,
     totalExpenses: number,
     availableYears: number[],
@@ -70,6 +70,7 @@ const submitBudget = () => {
     budgetForm.post(route('statistics.budget.update'), {
         onSuccess: () => {
             showingModal.value = false;
+            budgetForm.reset();
         },
     });
 };
@@ -78,7 +79,6 @@ const redirectToUpgrade = () => {
     showProModal.value = false;
     router.visit(route('billing.index'));
 };
-
 const chartOptions = computed<ApexOptions>(() => ({
     labels: props.stats.map(item => item.category),
     chart: {
@@ -88,7 +88,7 @@ const chartOptions = computed<ApexOptions>(() => ({
     },
     legend: { show: false },
     dataLabels: { enabled: false },
-    tooltip: { y: { formatter: (value: number) => formatCurrency(value) } },
+    tooltip: { y: { formatter: (value: number) => formatCurrency(value, userCurrency.value) } },
     plotOptions: {
         pie: {
             donut: {
@@ -100,13 +100,13 @@ const chartOptions = computed<ApexOptions>(() => ({
                         label: 'Expenses',
                         color: '#9ca3af',
                         fontSize: '12px',
-                        formatter: (w) => formatCurrency(w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0))
+                        formatter: (w) => formatCurrency(w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0), userCurrency.value)
                     },
                     value: {
                         show: true,
                         fontSize: '20px',
                         fontWeight: '900',
-                        formatter: (val: string) => formatCurrency(Number(val))
+                        formatter: (val: string) => formatCurrency(Number(val), userCurrency.value)
                     }
                 }
             }
@@ -208,7 +208,7 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
                                             <div v-if="budgets[item.category] > 0" class="text-[10px] italic">
                                                 <span class="text-gray-400">Limit: {{
                                                     formatCurrency(budgets[item.category],
-                                                    userCurrency) }}</span>
+                                                        userCurrency) }}</span>
                                                 <span v-if="Number(item.total) > budgets[item.category]"
                                                     class="text-red-500 font-bold ml-1">
                                                     (Over by {{ formatCurrency(Number(item.total) -

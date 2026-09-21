@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Transaction;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -18,13 +17,12 @@ class ExportController extends Controller
     public function download(Request $request)
     {
         $request->validate([
-            'month' => 'required',
-            'year' => 'required',
+            'month' => 'required|integer|between:1,12',
+            'year' => 'required|integer|digits:4',
             'format' => 'required|in:csv',
         ]);
 
-        $userId = auth()->id();
-        $transactions = Transaction::where('user_id', $userId)
+        $transactions = $request->user()->transactions()
             ->whereYear('created_at', $request->year)
             ->whereMonth('created_at', $request->month)
             ->orderBy('created_at', 'asc')
@@ -58,13 +56,16 @@ class ExportController extends Controller
 
     public function downloadPdf(Request $request)
     {
-
         if (!Gate::allows('pro-user')) {
-            abort(403, 'Ova opcija je rezervisana samo za Pro korisnike.');
+            abort(403, 'PDF Export is restricted to Pro users.');
         }
-        $userId = auth()->id();
 
-        $transactions = Transaction::where('user_id', $userId)
+        $request->validate([
+            'month' => 'required|integer|between:1,12',
+            'year' => 'required|integer|digits:4',
+        ]);
+
+        $transactions = $request->user()->transactions()
             ->whereYear('created_at', $request->year)
             ->whereMonth('created_at', $request->month)
             ->get();

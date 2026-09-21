@@ -41,17 +41,17 @@ const openEditModal = (transaction: Transaction) => {
     isEditModalOpen.value = true;
 };
 
-// 1. State za loader
+// State for loader
 const isConverting = ref(false);
 let pollInterval: number | null = null;
 
-// Pomoćna funkcija za pokretanje polling-a
+// Helper function for poolling
 const startPolling = () => {
-    if (pollInterval) return; // Ako već radi, ne diraj
+    if (pollInterval) return; 
     pollInterval = window.setInterval(checkStatus, 3000);
 };
 
-// 2. Funkcija za proveru statusa
+// Function to check status in database
 const checkStatus = async () => {
     try {
         const response = await fetch('/user/background-status');
@@ -59,7 +59,7 @@ const checkStatus = async () => {
 
         isConverting.value = data.background_status;
 
-        // Kada se job završi (background_status postane false, a bio je aktivan)
+        
         if (!data.background_status) {
             if (pollInterval !== null) {
                 clearInterval(pollInterval);
@@ -72,7 +72,7 @@ const checkStatus = async () => {
     }
 };
 
-// 3. Provera pri učitavanju stranice (da li je import već u toku od ranije)
+// Check on page loading
 onMounted(async () => {
     try {
         const response = await fetch('/user/background-status');
@@ -80,7 +80,7 @@ onMounted(async () => {
 
         if (data.background_status) {
             isConverting.value = true;
-            startPolling(); // Pokreni polling samo ako je uvoz u toku
+            startPolling(); 
         } else {
             isConverting.value = false;
         }
@@ -89,7 +89,7 @@ onMounted(async () => {
     }
 });
 
-// 4. Čišćenje intervala kada korisnik napusti stranicu
+// Clear interval if user exists page
 onUnmounted(() => {
     if (pollInterval !== null) {
         clearInterval(pollInterval);

@@ -53,6 +53,7 @@ class TransactionController extends Controller
             return redirect()->route('billing.index')
                 ->with('error', 'You reached a limit of your 15 free package transactions. Please Upgrade to Pro to continue adding transactions.');
         }
+
         $validated = $request->validate([
             'description' => 'required|string|min:3|max:255',
             'amount' => 'required|numeric|gt:0',
@@ -62,17 +63,15 @@ class TransactionController extends Controller
             'billing_day' => 'required_if:payment_type,recurring|nullable|integer|min:1|max:28',
         ]);
 
-        //Static writing of original amount and currency to save them for UI rendering
         $user = $request->user();
         $validated['original_amount'] = $validated['amount'];
         $validated['original_currency'] = $user->preferred_currency ?? 'EUR';
         $validated['currency'] = $user->preferred_currency ?? 'EUR';
 
-        $request->user()->transactions()->create($validated);
+        $user->transactions()->create($validated);
 
-        return redirect()->back()->with('success', 'Transaction was added succesfully!');
+        return redirect()->back()->with('success', 'Transaction was added successfully!');
     }
-
 
     public function update(Request $request, Transaction $transaction)
     {
@@ -89,7 +88,6 @@ class TransactionController extends Controller
             'billing_day' => 'required_if:payment_type,recurring|nullable|integer|min:1|max:28',
         ]);
 
-        //Static writing of original amount and currency to save them for UI rendering
         $user = $request->user();
         $validated['original_amount'] = $validated['amount'];
         $validated['original_currency'] = $user->preferred_currency ?? 'EUR';
@@ -97,8 +95,9 @@ class TransactionController extends Controller
 
         $transaction->update($validated);
 
-        return back()->with('success', 'Transaction was succesfully updated!');
+        return back()->with('success', 'Transaction was successfully updated!');
     }
+
     public function destroy(Transaction $transaction)
     {
         if ($transaction->user_id !== auth()->id()) {
@@ -107,12 +106,11 @@ class TransactionController extends Controller
 
         $transaction->delete();
 
-        return redirect()->back()->with('success', 'Transaction was deleted succesfully!');
+        return redirect()->back()->with('success', 'Transaction was deleted successfully!');
     }
 
     public function cancelSubscription(Transaction $transaction)
     {
-
         if ($transaction->user_id !== auth()->id()) {
             abort(403);
         }

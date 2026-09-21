@@ -59,7 +59,6 @@ const updateTransaction = () => {
             class="relative bg-white rounded-xl shadow-xl max-w-lg w-full p-6 overflow-hidden transform transition-all">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-bold text-gray-900">Edit Transaction</h3>
-                <!-- Close Modal through emit -->
                 <button @click="emit('close')" class="text-gray-400 hover:text-gray-600 font-bold">✕</button>
             </div>
 

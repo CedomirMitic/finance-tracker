@@ -3,50 +3,39 @@
 namespace App\Http\Controllers;
 
 use App\Models\Budget;
-use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class StatisticsController extends Controller
 {
-    public function index(Request $request): Response
+public function index(Request $request): Response
     {
+        $user = $request->user();
         $year = $request->input('year', date('Y'));
         $month = $request->input('month', date('m'));
-        $userId = auth()->id();
         
-        $budgets = Budget::where('user_id', $userId)
-            ->pluck('amount', 'category');
+        $budgets = $user->budgets()->pluck('amount', 'category');
 
-        
-        $transactions = Transaction::where('user_id', $userId)
+        $transactions = $user->transactions()
             ->whereYear('created_at', $year)
             ->whereMonth('created_at', $month)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // 1. Fetch expenses grouped by category
-        $stats = Transaction::where('user_id', $userId)
-            ->where('type', 'expense')
-            ->whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->selectRaw('category, SUM(amount) as total')
+        // Group expenses by category efficiently from the retrieved transactions collection
+        $stats = $transactions->where('type', 'expense')
             ->groupBy('category')
-            ->get();
+            ->map(fn ($group, $category) => [
+                'category' => $category,
+                'total' => $group->sum('amount')
+            ])
+            ->values();
 
-        // 2. Fetch total income
-        $totalIncome = Transaction::where('user_id', $userId)
-            ->where('type', 'income')
-            ->whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->sum('amount');
-
-        // 3. Fetch total expenses
+        $totalIncome = $transactions->where('type', 'income')->sum('amount');
         $totalExpenses = $stats->sum('total');
 
-        // Get available years - Koristimo YEAR() umesto strftime
-        $availableYears = Transaction::where('user_id', $userId)
+        $availableYears = $user->transactions()
             ->selectRaw("YEAR(created_at) as year")
             ->distinct()
             ->orderBy('year', 'desc')

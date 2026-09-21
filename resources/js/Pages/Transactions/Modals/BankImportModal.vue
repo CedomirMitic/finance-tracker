@@ -129,7 +129,7 @@ const closeModal = async () => {
                 </div>
             </transition>
 
-            <!-- Step 1: Upload File -->
+            <!--  Upload File -->
             <div v-if="step === 'upload'"
                 class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50">
                 <p class="text-sm text-gray-600 mb-2">Drag and drop bank statement (CSV, Excel) or click below</p>
@@ -137,7 +137,7 @@ const closeModal = async () => {
                     class="block w-full text-sm text-gray-500 file:mx-auto file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
             </div>
 
-            <!-- Step 2: Map Columns & Currency -->
+            <!--  Map Columns & Currency -->
             <div v-if="step === 'map'">
                 <p class="text-sm text-gray-500 mb-4">Select which columns match your transaction fields and choose the
                     currency of the statement:</p>
@@ -183,7 +183,7 @@ const closeModal = async () => {
                         class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl text-sm">Cancel</button>
                     <button @click="submitMapping" :disabled="isLoading"
                         class="px-5 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all">
-                        <!-- Optional Loading Spinner SVG -->
+                        <!--  Loading Spinner SVG -->
                         <svg v-if="isLoading" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg"
                             fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">

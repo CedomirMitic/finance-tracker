@@ -17,7 +17,7 @@ const props = defineProps<{
 const page = usePage<PageProps>();
 const userCurrency = computed(() => page.props.auth.user?.preferred_currency ?? 'EUR');
 
-const chartOptions: ApexOptions = {
+const chartOptions = computed<ApexOptions>(() => ({
     chart: {
         type: 'bar', 
         toolbar: { show: false }
@@ -36,10 +36,10 @@ const chartOptions: ApexOptions = {
     },
     yaxis: {
         labels: {
-            formatter: (val: number) => formatCurrency(val)
+            formatter: (val: number) => formatCurrency(val, userCurrency.value) // <- Dodato ovde
         }
     }
-};
+}));
 
 const series = [
     { name: 'Income', data: props.trend.map(t => t.income) },

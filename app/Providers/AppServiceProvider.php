@@ -23,10 +23,10 @@ class AppServiceProvider extends ServiceProvider
             return $user->subscribed('default');
         });
 
-        // Primer provere limita za besplatne korisnike (npr. max 30 transakcija)
+        // Limit check for not subscribed users
         Gate::define('create-transaction', function (User $user) {
             if ($user->subscribed('default')) {
-                return true; // Pro korisnici nemaju limit
+                return true; // Pro users have no limit
             }
             
             $monthlyCount = $user->transactions()

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { formatCurrency } from '@/Utils/formatters';
 import { usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
 import { PageProps } from '@/types';
 
 defineProps({

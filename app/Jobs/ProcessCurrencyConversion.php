@@ -11,6 +11,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ProcessCurrencyConversion implements ShouldQueue
 {
@@ -27,16 +28,13 @@ class ProcessCurrencyConversion implements ShouldQueue
 
     public function handle(): void
     {
-
         $this->user->update(['background_status' => true]);
 
         try {
-
             $rateCache = [];
             $newCurrency = $this->newCurrency;
-            $user = $this->user;
 
-            $user->transactions()->chunk(100, function ($transactions) use ($newCurrency, &$rateCache) {
+            $this->user->transactions()->chunk(100, function ($transactions) use ($newCurrency, &$rateCache) {
                 foreach ($transactions as $transaction) {
                     $from = $transaction->original_currency ?? $transaction->currency;
                     $sourceAmount = $transaction->original_amount ?? $transaction->amount;
@@ -54,9 +52,8 @@ class ProcessCurrencyConversion implements ShouldQueue
             });
 
         } catch (\Exception $e) {
-            \Log::error("Error while trying to execute a job: " . $e->getMessage() . " on line " . $e->getLine());
+            Log::error("Error while trying to execute a job: " . $e->getMessage() . " on line " . $e->getLine());
             throw $e;
-
         } finally {
             $this->user->update(['background_status' => false]);
         }
@@ -64,26 +61,25 @@ class ProcessCurrencyConversion implements ShouldQueue
 
     private function getExchangeRate($from, $to, $date, &$rateCache)
     {
-        if ($from === $to)
+        if ($from === $to) {
             return 1;
+        }
 
-        // Make sure it is  YYYY-MM-DD format
         $carbonDate = Carbon::parse($date);
 
-        // If transaction date is weekend go back to friday rates
         if ($carbonDate->isWeekend()) {
             $carbonDate->previous('friday');
         }
 
-        $formattedDate = $carbonDate->toDateString(); // Gets "2026-06-15"
+        $formattedDate = $carbonDate->toDateString();
         $cacheKey = "{$from}_{$to}_{$formattedDate}";
 
-        if (isset($rateCache[$cacheKey]))
+        if (isset($rateCache[$cacheKey])) {
             return $rateCache[$cacheKey];
+        }
 
         try {
-            
-            $response = Http::get("https://api.frankfurter.dev/v1/{$formattedDate}", [
+            $response = Http::timeout(5)->get("https://api.frankfurter.dev/v1/{$formattedDate}", [
                 'from' => $from,
                 'to' => $to,
             ]);
@@ -96,15 +92,15 @@ class ProcessCurrencyConversion implements ShouldQueue
                 }
             }
         } catch (\Exception $e) {
-            \Log::warning("Historical exchange rate error for {$formattedDate}: " . $e->getMessage());
+            Log::warning("Historical exchange rate error for {$formattedDate}: " . $e->getMessage());
         }
 
-        // If theres not rate for that specific date take latest
         try {
-            $response = Http::get("https://api.frankfurter.dev/v1/latest", [
+            $response = Http::timeout(5)->get("https://api.frankfurter.dev/v1/latest", [
                 'from' => $from,
                 'to' => $to,
             ]);
+
             if ($response->successful()) {
                 $rate = $response->json("rates.{$to}");
                 if ($rate) {
@@ -112,17 +108,16 @@ class ProcessCurrencyConversion implements ShouldQueue
                 }
             }
         } catch (\Exception $e) {
+            Log::warning("Latest exchange rate fallback error: " . $e->getMessage());
         }
 
         return 1;
     }
 
-    // Safety net if job fails
     public function failed(\Throwable $exception)
     {
-        $user = $this->user;
-        if ($user) {
-            $user->update(['background_status' => false]);
+        if ($this->user) {
+            $this->user->update(['background_status' => false]);
         }
     }
 }

@@ -14,7 +14,6 @@ class DashboardController extends Controller
     $user = auth()->user();
     $now = Carbon::now();
 
-    // 1. Quick Stats
     $spentToday = Transaction::where('user_id', $user->id)
         ->whereDate('created_at', Carbon::today())
         ->where('type', 'expense')
@@ -32,13 +31,13 @@ class DashboardController extends Controller
         ->where('type', 'expense')
         ->sum('amount');
 
-    // 2. Recent Transactions
+
     $recentTransactions = Transaction::where('user_id', $user->id)
         ->orderBy('created_at', 'desc')
         ->limit(5)
         ->get();
 
-    // 3. Monthly Trend (Last 6 Months) - UPDATED FOR MYSQL/AIVEN
+
     $trend = Transaction::select(
             DB::raw("DATE_FORMAT(created_at, '%m') as month"),
             DB::raw("SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as income"),
