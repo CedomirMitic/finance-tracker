@@ -19,7 +19,7 @@ class ExportController extends Controller
         $request->validate([
             'month' => 'required|integer|between:1,12',
             'year' => 'required|integer|digits:4',
-            'format' => 'required|in:csv',
+            'format' => 'required|in:csv,pdf',
         ]);
 
         $transactions = $request->user()->transactions()
