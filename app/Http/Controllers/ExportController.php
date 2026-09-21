@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Transaction;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -17,9 +18,9 @@ class ExportController extends Controller
     public function download(Request $request)
     {
         $request->validate([
-            'month' => 'required|integer|between:1,12',
-            'year' => 'required|integer|digits:4',
-            'format' => 'required|in:csv,pdf',
+            'month' => 'required',
+            'year' => 'required',
+            'format' => 'required|in:csv',
         ]);
 
         $transactions = $request->user()->transactions()
@@ -56,6 +57,7 @@ class ExportController extends Controller
 
     public function downloadPdf(Request $request)
     {
+
         if (!Gate::allows('pro-user')) {
             abort(403, 'PDF Export is restricted to Pro users.');
         }

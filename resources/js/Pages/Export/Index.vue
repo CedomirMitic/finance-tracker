@@ -62,7 +62,7 @@ const downloadPdf = () => {
         month: selectedMonth.value
     });
 
-    window.open(url, '_blank');
+    window.location.href = url;
     triggerSuccess('PDF report was successfully downloaded!');
 };
 </script>
