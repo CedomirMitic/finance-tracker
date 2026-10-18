@@ -16,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        if (app()->environment('production')) {
+        if (app()->environment('production') && !request()->getHost()->contains('sslip.io')) {
             URL::forceScheme('https');
         }
         Gate::define('pro-user', function (User $user) {
