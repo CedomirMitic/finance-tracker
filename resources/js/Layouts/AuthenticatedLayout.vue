@@ -33,7 +33,7 @@ useAutoDismissFlash();
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
 
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                                    Dashboard
+                                    Overview
                                 </NavLink>
 
                                 <NavLink :href="route('billing.index')" :active="route().current('billing.index')">
@@ -121,7 +121,7 @@ useAutoDismissFlash();
 
                     <div class="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                            Dashboard
+                            Overview
                         </ResponsiveNavLink>
                     </div>
 
@@ -184,7 +184,7 @@ useAutoDismissFlash();
 
             <!-- Page Content -->
             <main>
-                <div class="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+                <div class="mx-auto max-w-7xl px-4  sm:px-6 lg:px-8">
                     <FlashMessage />
                 </div>
 
