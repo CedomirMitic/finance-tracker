@@ -6,8 +6,11 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\TransactionController;
+use App\Models\User;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -30,6 +33,20 @@ Route::get('/terms', function () {
 Route::get('/privacy', function () {
     return Inertia::render('PrivacyPolicy');
 })->name('privacy');
+
+
+
+Route::get('/demo-login', function () {
+    $user = User::firstOrCreate(
+        ['email' => 'test@example.com'],
+        [
+            'name' => 'Demo User',
+            'password' => Hash::make('test123123'),
+        ]
+    );
+    Auth::login($user);
+    return redirect('/dashboard');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
@@ -62,7 +79,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/transactions/import-preview', [BankImportController::class, 'preview'])->name('transactions.import.preview');
     Route::post('/transactions/import-store', [BankImportController::class, 'store'])->name('transactions.import.store');
     Route::post('/transactions/import/cancel', [BankImportController::class, 'cancel'])->name('transactions.import.cancel');
-
 });
 
 // Automatic Subscription Checker

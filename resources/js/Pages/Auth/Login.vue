@@ -31,78 +31,62 @@ const submit = () => {
 
 <template>
     <GuestLayout>
+
         <Head title="Log in" />
 
         <div class="mb-6">
-            <h3 class="text-xl font-black text-gray-900">Welcome back</h3>
-            <p class="text-sm text-gray-500 mt-1">Please enter your details to sign in.</p>
+            <h3 class="text-xl font-black text-slate-900">Welcome back</h3>
+            <p class="text-sm text-slate-500 mt-1">Please enter your details to sign in.</p>
         </div>
 
-        <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
+        <div v-if="status" class="mb-4 text-sm font-medium text-emerald-600">
             {{ status }}
         </div>
 
         <form @submit.prevent="submit" class="space-y-4">
             <div>
-                <InputLabel for="email" value="Email" class="font-bold text-gray-700" />
+                <InputLabel for="email" value="Email" class="font-bold text-slate-700" />
 
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm"
-                    v-model="form.email"
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
+                <TextInput id="email" type="email"
+                    class="mt-1 block w-full rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm"
+                    v-model="form.email" required autofocus autocomplete="username" />
 
                 <InputError class="mt-2" :message="form.errors.email" />
             </div>
 
             <div>
-                <InputLabel for="password" value="Password" class="font-bold text-gray-700" />
+                <InputLabel for="password" value="Password" class="font-bold text-slate-700" />
 
-                <TextInput
-                    id="password"
-                    type="password"
-                    class="mt-1 block w-full rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm"
-                    v-model="form.password"
-                    required
-                    autocomplete="current-password"
-                />
+                <TextInput id="password" type="password"
+                    class="mt-1 block w-full rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm"
+                    v-model="form.password" required autocomplete="current-password" />
 
                 <InputError class="mt-2" :message="form.errors.password" />
             </div>
 
             <div class="flex items-center justify-between text-sm">
-                <label class="flex items-center">
-                    <Checkbox name="remember" v-model:checked="form.remember" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-                    <span class="ms-2 text-gray-600">Remember me</span>
+                <label class="flex items-center cursor-pointer">
+                    <Checkbox name="remember" v-model:checked="form.remember"
+                        class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                    <span class="ms-2 text-slate-600">Remember me</span>
                 </label>
 
-                <Link
-                    v-if="canResetPassword"
-                    :href="route('password.request')"
-                    class="text-indigo-600 hover:text-indigo-700 font-semibold"
-                >
+                <Link v-if="canResetPassword" :href="route('password.request')"
+                    class="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors">
                     Forgot password?
                 </Link>
             </div>
 
             <div>
-                <button
-                    type="submit"
-                    class="w-full py-3.5 px-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-xl shadow-indigo-200 hover:bg-indigo-700 transition-all text-center block"
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
+                <PrimaryButton color="emerald" class="w-full py-3.5" :class="{ 'opacity-25': form.processing }"
+                    :disabled="form.processing">
                     Sign in
-                </button>
+                </PrimaryButton>
             </div>
 
-            <div class="text-center mt-6 text-sm text-gray-500">
-                Don't have an account? 
-                <Link :href="route('register')" class="text-indigo-600 font-bold hover:underline">Sign up</Link>
+            <div class="text-center mt-6 text-sm text-slate-500">
+                Don't have an account?
+                <Link :href="route('register')" class="text-emerald-600 font-bold hover:underline">Sign up</Link>
             </div>
         </form>
     </GuestLayout>

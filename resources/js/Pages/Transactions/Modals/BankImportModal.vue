@@ -104,11 +104,11 @@ const closeModal = async () => {
 </script>
 
 <template>
-    <div v-if="show" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl p-6 max-w-xl w-full shadow-2xl">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-gray-900">Smart Bank Statement Import</h3>
-                <button @click="closeModal" class="text-gray-400 hover:text-gray-600">✕</button>
+    <div v-if="show" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 font-sans">
+        <div class="bg-white rounded-3xl p-8 max-w-xl w-full shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black text-slate-900 tracking-tight">Smart Bank Statement Import</h3>
+                <button @click="$emit('close')" class="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-xl hover:bg-slate-100 transition-colors">✕</button>
             </div>
 
             <!-- Flash error Section -->
@@ -119,7 +119,7 @@ const closeModal = async () => {
                 leave-from-class="transform translate-y-0 opacity-100"
                 leave-to-class="transform -translate-y-2 opacity-0">
                 <div v-if="flash.error"
-                    class="mb-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl shadow-sm flex items-center justify-between">
+                    class="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-2xl shadow-sm flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <span class="text-xl">❌</span>
                         <span class="text-sm font-semibold">{{ flash.error }}</span>
@@ -129,61 +129,55 @@ const closeModal = async () => {
                 </div>
             </transition>
 
-            <!--  Upload File -->
+            <!-- Upload File -->
             <div v-if="step === 'upload'"
-                class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50">
-                <p class="text-sm text-gray-600 mb-2">Drag and drop bank statement (CSV, Excel) or click below</p>
+                class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                <p class="text-sm text-slate-600 mb-4 font-medium">Drag and drop bank statement (CSV, Excel) or click below</p>
                 <input type="file" @change="handleFileUpload" accept=".csv,.txt,.xlsx,.xls"
-                    class="block w-full text-sm text-gray-500 file:mx-auto file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
+                    class="block w-full text-sm text-slate-500 file:mx-auto file:py-2.5 file:px-5 file:rounded-2xl file:border-0 file:text-sm file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer transition-all" />
             </div>
 
-            <!--  Map Columns & Currency -->
+            <!-- Map Columns & Currency -->
             <div v-if="step === 'map'">
-                <p class="text-sm text-gray-500 mb-4">Select which columns match your transaction fields and choose the
-                    currency of the statement:</p>
+                <p class="text-sm text-slate-500 mb-6">Select which columns match your transaction fields and choose the currency of the statement:</p>
 
-                <div class="space-y-4 mb-6">
+                <div class="space-y-4 mb-8">
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Currency of
-                            Statement</label>
+                        <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Currency of Statement</label>
                         <Multiselect v-model="mapping.currency" :options="currencies" :searchable="true"
                             placeholder="Search currency (e.g. RSD, USD)..." track-by="value" label="label"
                             value-format="value" />
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Transaction Date</label>
-                        <select v-model="mapping.date_col" class="w-full border-gray-300 rounded-xl text-sm">
+                        <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Transaction Date</label>
+                        <select v-model="mapping.date_col" class="w-full border-slate-200 rounded-2xl text-sm focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
                             <option :value="null">-- Select Date Column (Optional) --</option>
-                            <option v-for="(header, index) in headers" :key="index" :value="index">{{ header }} (Sample:
-                                {{ sampleData[0]?.[index] }})</option>
+                            <option v-for="(header, index) in headers" :key="index" :value="index">{{ header }} (Sample: {{ sampleData[0]?.[index] }})</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Amount</label>
-                        <select v-model="mapping.amount_col" class="w-full border-gray-300 rounded-xl text-sm">
-                            <option v-for="(header, index) in headers" :key="index" :value="index">{{ header }} (Sample:
-                                {{ sampleData[0]?.[index] }})</option>
+                        <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Amount</label>
+                        <select v-model="mapping.amount_col" class="w-full border-slate-200 rounded-2xl text-sm focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
+                            <option v-for="(header, index) in headers" :key="index" :value="index">{{ header }} (Sample: {{ sampleData[0]?.[index] }})</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Description /
-                            Purpose</label>
-                        <select v-model="mapping.description_col" class="w-full border-gray-300 rounded-xl text-sm">
-                            <option v-for="(header, index) in headers" :key="index" :value="index">{{ header }} (Sample:
-                                {{ sampleData[0]?.[index] }})</option>
+                        <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Description / Purpose</label>
+                        <select v-model="mapping.description_col" class="w-full border-slate-200 rounded-2xl text-sm focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
+                            <option v-for="(header, index) in headers" :key="index" :value="index">{{ header }} (Sample: {{ sampleData[0]?.[index] }})</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="flex justify-end gap-3">
-                    <button @click="closeModal"
-                        class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl text-sm">Cancel</button>
+                    <button @click="$emit('close')"
+                        class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-sm transition-colors">Cancel</button>
                     <button @click="submitMapping" :disabled="isLoading"
-                        class="px-5 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all">
-                        <!--  Loading Spinner SVG -->
+                        class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 text-sm shadow-lg shadow-emerald-600/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all">
+                        <!-- Loading Spinner SVG -->
                         <svg v-if="isLoading" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg"
                             fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">

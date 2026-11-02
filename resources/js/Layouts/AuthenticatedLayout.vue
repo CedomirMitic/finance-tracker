@@ -11,27 +11,27 @@ import { Link } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
 
-//Activate timer for toast messages
+// Activate timer for toast messages
 useAutoDismissFlash();
-
 </script>
 
 <template>
     <div>
-        <div class="min-h-screen bg-gray-100">
-            <nav class="border-b border-gray-100 bg-white">
+        <div class="min-h-screen bg-slate-50 font-sans">
+            <nav class="border-b border-slate-100 bg-white shadow-sm sticky top-0 z-40">
                 <!-- Primary Navigation Menu -->
                 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div class="flex h-16 justify-between">
                         <div class="flex">
+                            <!-- Logo -->
                             <div class="flex shrink-0 items-center">
-                                <Link :href="route('transactions.index')">
-                                    <ApplicationLogo class="block h-9 w-auto fill-current text-gray-800" />
+                                <Link :href="route('dashboard')">
+                                    <ApplicationLogo />
                                 </Link>
                             </div>
 
+                            <!-- Navigation Links -->
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
                                     Overview
                                 </NavLink>
@@ -40,8 +40,7 @@ useAutoDismissFlash();
                                     Upgrade
                                 </NavLink>
 
-                                <NavLink :href="route('transactions.index')"
-                                    :active="route().current('transactions.index')">
+                                <NavLink :href="route('transactions.index')" :active="route().current('transactions.index')">
                                     Transactions
                                 </NavLink>
 
@@ -55,17 +54,17 @@ useAutoDismissFlash();
                             </div>
                         </div>
 
+                        <!-- Settings Dropdown (Desktop) -->
                         <div class="hidden sm:ms-6 sm:flex sm:items-center">
-                            <!-- Settings Dropdown -->
                             <div class="relative ms-3">
                                 <Dropdown align="right" width="48">
                                     <template #trigger>
                                         <span class="inline-flex rounded-md">
                                             <button type="button"
-                                                class="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none">
+                                                class="inline-flex items-center rounded-xl border border-slate-200/80 bg-white px-3.5 py-2 text-sm font-bold text-slate-700 transition duration-150 ease-in-out hover:bg-slate-50 hover:text-slate-900 focus:outline-none">
                                                 {{ $page.props.auth.user.name }}
 
-                                                <svg class="-me-0.5 ms-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg"
+                                                <svg class="-me-0.5 ms-2 h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg"
                                                     viewBox="0 0 20 20" fill="currentColor">
                                                     <path fill-rule="evenodd"
                                                         d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
@@ -87,24 +86,19 @@ useAutoDismissFlash();
                             </div>
                         </div>
 
-                        <!-- Hamburger -->
+                        <!-- Hamburger (Mobile) -->
                         <div class="-me-2 flex items-center sm:hidden">
-                            <button @click="
-                                showingNavigationDropdown =
-                                !showingNavigationDropdown
-                                "
-                                class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none">
+                            <button @click="showingNavigationDropdown = !showingNavigationDropdown"
+                                class="inline-flex items-center justify-center rounded-xl p-2 text-slate-400 transition duration-150 ease-in-out hover:bg-slate-100 hover:text-slate-600 focus:bg-slate-100 focus:text-slate-600 focus:outline-none">
                                 <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                                     <path :class="{
                                         hidden: showingNavigationDropdown,
-                                        'inline-flex':
-                                            !showingNavigationDropdown,
+                                        'inline-flex': !showingNavigationDropdown,
                                     }" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M4 6h16M4 12h16M4 18h16" />
                                     <path :class="{
                                         hidden: !showingNavigationDropdown,
-                                        'inline-flex':
-                                            showingNavigationDropdown,
+                                        'inline-flex': showingNavigationDropdown,
                                     }" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -113,57 +107,38 @@ useAutoDismissFlash();
                     </div>
                 </div>
 
-                <!-- Responsive Navigation Menu -->
-                <div :class="{
-                    block: showingNavigationDropdown,
-                    hidden: !showingNavigationDropdown,
-                }" class="sm:hidden">
-
-                    <div class="space-y-1 pb-3 pt-2">
+<!-- Responsive Navigation Menu -->
+                <div :class="{ block: showingNavigationDropdown, hidden: !showingNavigationDropdown }" class="sm:hidden border-t border-slate-100 bg-white">
+                    <div class="space-y-1.5 p-4">
                         <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
                             Overview
                         </ResponsiveNavLink>
-                    </div>
-
-                    <div class="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink :href="route('transactions.index')"
-                            :active="route().current('transactions.index')">
+                        <ResponsiveNavLink :href="route('transactions.index')" :active="route().current('transactions.index')">
                             Transactions
                         </ResponsiveNavLink>
-                    </div>
-
-                    <div class="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink :href="route('billing.index')"
-                            :active="route().current('billing.index')">
+                        <ResponsiveNavLink :href="route('billing.index')" :active="route().current('billing.index')">
                             Upgrade
                         </ResponsiveNavLink>
-                    </div>
-
-                    <div class="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink :href="route('statistics')" :active="route().current('statistics')">
                             Statistics
                         </ResponsiveNavLink>
-                    </div>
-
-                    <div class="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink :href="route('export.index')" :active="route().current('export.index')">
                             Export Report
                         </ResponsiveNavLink>
                     </div>
 
-
                     <!-- Responsive Settings Options -->
-                    <div class="border-t border-gray-200 pb-1 pt-4">
-                        <div class="px-4">
-                            <div class="text-base font-medium text-gray-800">
+                    <div class="border-t border-slate-100 p-4 bg-slate-50/50">
+                        <div class="px-2 mb-3">
+                            <div class="text-base font-bold text-slate-800">
                                 {{ $page.props.auth.user.name }}
                             </div>
-                            <div class="text-sm font-medium text-gray-500">
+                            <div class="text-xs font-medium text-slate-500">
                                 {{ $page.props.auth.user.email }}
                             </div>
                         </div>
 
-                        <div class="mt-3 space-y-1">
+                        <div class="space-y-1">
                             <ResponsiveNavLink :href="route('profile.edit')">
                                 Profile
                             </ResponsiveNavLink>
@@ -176,15 +151,15 @@ useAutoDismissFlash();
             </nav>
 
             <!-- Page Heading -->
-            <header class="bg-white shadow" v-if="$slots.header">
+            <header class="bg-white border-b border-slate-100 shadow-sm" v-if="$slots.header">
                 <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                     <slot name="header" />
                 </div>
             </header>
 
             <!-- Page Content -->
-            <main>
-                <div class="mx-auto max-w-7xl px-4  sm:px-6 lg:px-8">
+            <main class="pb-12">
+                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6">
                     <FlashMessage />
                 </div>
 

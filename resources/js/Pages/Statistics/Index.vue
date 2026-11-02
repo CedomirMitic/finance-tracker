@@ -123,48 +123,58 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
 
     <Head title="Statistics" />
     <AuthenticatedLayout>
-        <template #header>
-            <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-md sm:text-xl text-gray-800 leading-tight">Financial Statistics</h2>
-                <div class="flex items-center gap-2 sm:gap-4">
+<template #header>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 font-sans">
+                <div>
+                    <h2 class="font-black text-xl sm:text-2xl text-slate-900 tracking-tight">Financial Statistics</h2>
+                    <p class="text-xs text-slate-400 mt-0.5 font-medium">Analyze your monthly breakdown and category limits.</p>
+                </div>
+                
+                <!-- Selektori za mesec i godinu sa dovoljno prostora da tekst ne prelazi preko strelice -->
+                <div class="flex items-center gap-2.5">
                     <select v-model="selectedMonth" @change="updateStats"
-                        class="rounded-md border-gray-300 shadow-sm py-1 text-sm">
+                        class="bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:border-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all cursor-pointer">
                         <option v-for="m in months" :key="m.value" :value="m.value">{{ m.label }}</option>
                     </select>
+                    
                     <select v-model="selectedYear" @change="updateStats"
-                        class="rounded-md border-gray-300 shadow-sm py-1 text-sm">
+                        class="bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:border-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all cursor-pointer">
                         <option v-for="y in availableYears" :key="y" :value="y">{{ y }}</option>
                     </select>
                 </div>
             </div>
         </template>
 
-        <div class="py-12">
+        <div class="py-12 font-sans">
             <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <!-- Top Summary Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 text-center md:text-left">
-                        <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Income</p>
-                        <p class="text-2xl font-black text-green-600">{{ formatCurrency(totalIncome, userCurrency) }}
-                        </p>
+                    <div
+                        class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 border-l-4 border-l-emerald-500 text-center md:text-left">
+                        <p class="text-xs text-slate-400 uppercase font-black tracking-wider">Total Income</p>
+                        <p class="text-2xl font-black text-emerald-600 mt-1">{{ formatCurrency(totalIncome,
+                            userCurrency) }}</p>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500 text-center md:text-left">
-                        <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Expenses</p>
-                        <p class="text-2xl font-black text-red-600">{{ formatCurrency(totalExpenses, userCurrency) }}
-                        </p>
+                    <div
+                        class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 border-l-4 border-l-red-500 text-center md:text-left">
+                        <p class="text-xs text-slate-400 uppercase font-black tracking-wider">Total Expenses</p>
+                        <p class="text-2xl font-black text-red-600 mt-1">{{ formatCurrency(totalExpenses, userCurrency)
+                        }}</p>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 text-center md:text-left"
-                        :class="netBalance >= 0 ? 'border-indigo-500' : 'border-orange-500'">
-                        <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Net Balance</p>
-                        <p class="text-2xl font-black" :class="netBalance >= 0 ? 'text-indigo-600' : 'text-orange-600'">
-                            {{
-                                formatCurrency(netBalance, userCurrency) }}</p>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 border-l-4 text-center md:text-left"
+                        :class="netBalance >= 0 ? 'border-l-emerald-600' : 'border-l-orange-500'">
+                        <p class="text-xs text-slate-400 uppercase font-black tracking-wider">Net Balance</p>
+                        <p class="text-2xl font-black mt-1"
+                            :class="netBalance >= 0 ? 'text-emerald-700' : 'text-orange-600'">
+                            {{ formatCurrency(netBalance, userCurrency) }}
+                        </p>
                     </div>
                 </div>
 
-                <div class="bg-white shadow-sm rounded-xl p-4 sm:p-8 mb-8 overflow-hidden">
+                <!-- Main Chart & Breakdown Section -->
+                <div class="bg-white shadow-sm rounded-3xl border border-slate-100 p-6 sm:p-8 mb-8 overflow-hidden">
                     <div v-if="series.length > 0">
                         <div class="flex flex-col lg:flex-row items-center justify-between gap-10">
-
                             <div class="w-full lg:w-1/2 flex justify-center">
                                 <div class="w-full relative mx-auto" style="max-width: 400px;">
                                     <VueApexCharts type="donut" width="100%" :options="chartOptions" :series="series" />
@@ -173,42 +183,42 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
 
                             <div class="flex-1 w-full max-w-md lg:max-w-none">
                                 <h4
-                                    class="text-xs font-bold text-gray-400 uppercase mb-6 tracking-widest text-center lg:text-left underline decoration-indigo-200 underline-offset-8">
+                                    class="text-xs font-black text-slate-400 uppercase mb-6 tracking-widest text-center lg:text-left underline decoration-emerald-200 underline-offset-8">
                                     Expense Breakdown
                                 </h4>
-                                <div class="space-y-6">
+                                <div class="space-y-4">
                                     <div v-for="(item, index) in stats" :key="item.category"
                                         @click="toggleCategory(item.category)"
-                                        class="group cursor-pointer p-3 -mx-2 rounded-xl transition hover:bg-gray-50"
-                                        :class="{ 'bg-indigo-50 ring-1 ring-indigo-100': activeCategory === item.category }">
+                                        class="group cursor-pointer p-4 -mx-2 rounded-2xl transition hover:bg-slate-50 border border-transparent"
+                                        :class="{ 'bg-emerald-50/60 border-emerald-100': activeCategory === item.category }">
 
                                         <div class="flex justify-between items-center text-sm mb-2">
                                             <span
-                                                class="font-bold text-gray-700 capitalize flex items-center min-w-0 flex-1 mr-2">
+                                                class="font-bold text-slate-700 capitalize flex items-center min-w-0 flex-1 mr-2">
                                                 <span class="truncate">{{ item.category }}</span>
                                                 <button @click.stop="openBudgetModal(item.category)" type="button"
-                                                    class="ml-2 flex-shrink-0 text-[9px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-400 hover:bg-indigo-600 hover:text-white transition uppercase font-bold flex items-center gap-1">
+                                                    class="ml-2 flex-shrink-0 text-[10px] bg-slate-100 px-2 py-1 rounded-xl text-slate-500 hover:bg-emerald-600 hover:text-white transition uppercase font-extrabold flex items-center gap-1">
                                                     Budget
                                                     <span v-if="!user?.subscribed"
-                                                        class="text-[8px] bg-amber-100 text-amber-700 px-1 rounded">PRO</span>
+                                                        class="text-[8px] bg-amber-100 text-amber-800 px-1 rounded-lg">PRO</span>
                                                 </button>
                                             </span>
-                                            <span class="text-gray-900 font-black flex-shrink-0">{{
-                                                formatCurrency(Number(item.total), userCurrency) }}</span>
+                                            <span class="text-slate-900 font-black flex-shrink-0">
+                                                {{ formatCurrency(Number(item.total), userCurrency) }}
+                                            </span>
                                         </div>
 
-                                        <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                                            <div class="h-full transition-all duration-1000"
-                                                :class="budgets[item.category] > 0 && Number(item.total) > budgets[item.category] ? 'bg-red-500' : 'bg-indigo-500'"
+                                        <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                            <div class="h-full transition-all duration-1000 rounded-full"
+                                                :class="budgets[item.category] > 0 && Number(item.total) > budgets[item.category] ? 'bg-red-500' : 'bg-emerald-500'"
                                                 :style="{ width: Math.min((Number(item.total) / (budgets[item.category] > 0 ? budgets[item.category] : grandTotal || 1) * 100), 100) + '%' }">
                                             </div>
                                         </div>
 
-                                        <div class="flex justify-between mt-1 min-h-[14px]">
-                                            <div v-if="budgets[item.category] > 0" class="text-[10px] italic">
-                                                <span class="text-gray-400">Limit: {{
-                                                    formatCurrency(budgets[item.category],
-                                                        userCurrency) }}</span>
+                                        <div class="flex justify-between mt-1.5 min-h-[14px]">
+                                            <div v-if="budgets[item.category] > 0" class="text-[11px] italic">
+                                                <span class="text-slate-400 font-medium">Limit: {{
+                                                    formatCurrency(budgets[item.category], userCurrency) }}</span>
                                                 <span v-if="Number(item.total) > budgets[item.category]"
                                                     class="text-red-500 font-bold ml-1">
                                                     (Over by {{ formatCurrency(Number(item.total) -
@@ -216,41 +226,46 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
                                                         userCurrency) }})
                                                 </span>
                                             </div>
-                                            <p v-else class="text-[10px] text-gray-300 italic">No limit set</p>
+                                            <p v-else class="text-[11px] text-slate-300 italic font-medium">No limit set
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div v-else class="py-20 text-center text-gray-400">No data found.</div>
+                    <div v-else class="py-20 text-center text-slate-400 font-medium">No data found.</div>
                 </div>
 
+                <!-- Category Details Transition Table -->
                 <transition enter-active-class="transition duration-300 ease-out"
                     enter-from-class="transform scale-95 opacity-0" enter-to-class="transform scale-100 opacity-100">
-                    <div v-if="activeCategory" class="bg-white shadow-sm rounded-xl p-6 border-t-4 border-indigo-500">
+                    <div v-if="activeCategory"
+                        class="bg-white shadow-sm rounded-3xl border border-slate-100 p-6 sm:p-8 border-t-4 border-t-emerald-500">
                         <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-lg font-bold text-gray-800">
-                                Details for <span class="capitalize text-indigo-600">{{ activeCategory }}</span>
+                            <h3 class="text-lg font-black text-slate-900 tracking-tight">
+                                Details for <span class="capitalize text-emerald-600">{{ activeCategory }}</span>
                             </h3>
                             <button @click="activeCategory = null"
-                                class="text-gray-400 hover:text-gray-600 text-sm font-bold">&times; Close</button>
+                                class="text-slate-400 hover:text-slate-600 text-sm font-bold p-1 rounded-xl hover:bg-slate-100 transition-colors">&times;
+                                Close</button>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-sm">
                                 <thead>
-                                    <tr class="text-gray-400 border-b uppercase text-[10px] tracking-widest">
+                                    <tr
+                                        class="text-slate-400 border-b border-slate-100 uppercase text-[10px] tracking-widest font-black">
                                         <th class="pb-3">Description</th>
                                         <th class="pb-3 text-right">Amount</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y">
+                                <tbody class="divide-y divide-slate-100">
                                     <tr v-for="t in filteredTransactions" :key="t.id"
-                                        class="hover:bg-gray-50 transition">
-                                        <td class="py-3 font-medium text-gray-700">{{ t.description }}</td>
-                                        <td class="py-3 text-right font-black text-red-500">{{
-                                            formatCurrency(Number(t.amount),
-                                                userCurrency) }}</td>
+                                        class="hover:bg-slate-50 transition">
+                                        <td class="py-3.5 font-semibold text-slate-700">{{ t.description }}</td>
+                                        <td class="py-3.5 text-right font-black text-red-500">
+                                            {{ formatCurrency(Number(t.amount), userCurrency) }}
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -260,19 +275,21 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
             </div>
         </div>
 
+        <!-- Budget Modal -->
         <Modal :show="showingModal" @close="showingModal = false" max-width="md">
-            <div class="p-6">
-                <h2 class="text-lg font-black text-gray-900 capitalize text-center mb-6 border-b pb-4">
+            <div class="p-8 font-sans">
+                <h2
+                    class="text-xl font-black text-slate-900 capitalize text-center mb-6 border-b border-slate-100 pb-4">
                     Budget for {{ budgetForm.category }}
                 </h2>
 
                 <div class="mb-6">
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Monthly Limit</label>
-
+                    <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Monthly
+                        Limit</label>
                     <div class="relative flex items-center">
                         <input v-model="budgetForm.amount" type="number" step="0.01"
-                            class="w-full border-gray-200 rounded-lg focus:ring-indigo-500 p-3 pr-16" />
-                        <span class="absolute right-4 text-sm font-bold text-gray-400">
+                            class="w-full border-slate-200 rounded-2xl focus:border-emerald-500 focus:ring-emerald-500 p-3.5 pr-16 text-slate-800 font-medium" />
+                        <span class="absolute right-4 text-xs font-bold text-slate-400">
                             {{ userCurrency }}
                         </span>
                     </div>
@@ -280,27 +297,31 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
 
                 <div class="flex gap-3">
                     <button @click="showingModal = false"
-                        class="flex-1 py-3 text-sm font-bold text-gray-500 bg-gray-50 rounded-lg hover:bg-gray-100 transition">Cancel</button>
+                        class="flex-1 py-3.5 text-sm font-bold text-slate-600 bg-slate-100 rounded-2xl hover:bg-slate-200 transition">Cancel</button>
                     <button @click="submitBudget"
-                        class="flex-1 py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition">Save</button>
+                        class="flex-1 py-3.5 bg-emerald-600 text-white rounded-2xl text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-600/25 transition">Save</button>
                 </div>
             </div>
         </Modal>
 
+        <!-- PRO Modal -->
         <Modal :show="showProModal" @close="showProModal = false" max-width="md">
-            <div class="p-6 text-center">
+            <div class="p-8 text-center font-sans">
                 <div
-                    class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
-                    ⭐</div>
-                <h2 class="text-lg font-black text-gray-900 mb-2">PRO Feature</h2>
-                <p class="text-sm text-gray-500 mb-6">Setting category budgets and tracking limits is exclusively
-                    available for
-                    PRO members. Upgrade your account to unlock this feature.</p>
+                    class="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold shadow-inner">
+                    ⭐
+                </div>
+                <h2 class="text-xl font-black text-slate-900 mb-2 tracking-tight">PRO Feature</h2>
+                <p class="text-sm text-slate-500 mb-8 font-medium">
+                    Setting category budgets and tracking limits is exclusively available for PRO members. Upgrade your
+                    account
+                    to unlock this feature.
+                </p>
                 <div class="flex gap-3">
                     <button @click="showProModal = false"
-                        class="flex-1 py-3 text-sm font-bold text-gray-500 bg-gray-50 rounded-lg hover:bg-gray-100 transition">Close</button>
+                        class="flex-1 py-3.5 text-sm font-bold text-slate-600 bg-slate-100 rounded-2xl hover:bg-slate-200 transition">Close</button>
                     <button @click="redirectToUpgrade"
-                        class="flex-1 py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition">Upgrade
+                        class="flex-1 py-3.5 bg-emerald-600 text-white rounded-2xl text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-600/25 transition">Upgrade
                         to PRO</button>
                 </div>
             </div>
