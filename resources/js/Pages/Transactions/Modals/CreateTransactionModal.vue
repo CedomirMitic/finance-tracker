@@ -26,7 +26,6 @@ const submit = () => {
             form.reset();
             emit('close');
         },
-        onError: () => console.log("Validation failed"),
     });
 };
 </script>

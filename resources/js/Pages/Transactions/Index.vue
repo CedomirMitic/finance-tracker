@@ -72,7 +72,6 @@ const checkStatus = async () => {
             router.reload();
         }
     } catch (e) {
-        console.error(e);
     }
 };
 
@@ -89,7 +88,6 @@ onMounted(async () => {
             isConverting.value = false;
         }
     } catch (e) {
-        console.error(e);
     }
 });
 

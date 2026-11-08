@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { User } from '@/types';
+import axios from 'axios';
 
 interface PageProps {
     auth: {
@@ -34,36 +35,55 @@ const months = [
 const selectedYear = ref(new Date().getFullYear());
 const selectedMonth = ref(('0' + (new Date().getMonth() + 1)).slice(-2));
 
-const downloadCsv = () => {
-    const url = route('export.download', {
-        year: selectedYear.value,
-        month: selectedMonth.value,
-        format: 'csv'
-    });
+const downloadCsv = async () => {
+    try {
+        const response = await axios.get(route('export.download', {
+            year: selectedYear.value,
+            month: selectedMonth.value,
+            format: 'csv'
+        }), {
+            responseType: 'blob', 
+        });
 
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `report-${selectedYear.value}-${selectedMonth.value}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+        const blob = new Blob([response.data], { type: 'text/csv' });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = `report-${selectedYear.value}-${selectedMonth.value}.csv`;
+        link.click();
+        window.URL.revokeObjectURL(link.href);
 
-    triggerSuccess('CSV report was successfully downloaded!');
+        (page.props as any).flash.success = 'CSV report started downloading...';
+    } catch (error: any) {
+        (page.props as any).flash.error = 'There was an error while downloading CSV...';
+    }
 };
 
-const downloadPdf = () => {
+const downloadPdf = async () => {
     if (!isPro.value) {
         window.location.href = route('billing.index');
         return;
     }
 
-    const url = route('export.pdf', {
-        year: selectedYear.value,
-        month: selectedMonth.value
-    });
+    try {
+        const response = await axios.get(route('export.pdf', {
+            year: selectedYear.value,
+            month: selectedMonth.value
+        }), {
+            responseType: 'blob',
+        });
 
-    window.location.href = url;
-    triggerSuccess('PDF report was successfully downloaded!');
+        
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = `Report-${selectedYear.value}-${selectedMonth.value}.pdf`;
+        link.click();
+        window.URL.revokeObjectURL(link.href);
+
+        (page.props as any).flash.success = 'PDF report started downloading...';
+    } catch (error: any) {
+        (page.props as any).flash.error = 'There was an error while downloading...';
+    }
 };
 </script>
 
@@ -82,23 +102,6 @@ const downloadPdf = () => {
         <div class="py-12 font-sans">
             <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
 
-                <!-- Flash Messages Alert Box -->
-                <transition enter-active-class="transition duration-300 ease-out"
-                    enter-from-class="transform -translate-y-2 opacity-0"
-                    enter-to-class="transform translate-y-0 opacity-100"
-                    leave-active-class="transition duration-200 ease-in"
-                    leave-from-class="transform translate-y-0 opacity-100"
-                    leave-to-class="transform -translate-y-2 opacity-0">
-                    <div v-if="successMessage"
-                        class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl shadow-sm flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <span class="text-xl">✅</span>
-                            <span class="text-sm font-bold">{{ successMessage }}</span>
-                        </div>
-                        <button @click="successMessage = null"
-                            class="text-emerald-400 hover:text-emerald-600 text-sm font-bold p-1 rounded-xl hover:bg-emerald-100/50 transition-colors">✕</button>
-                    </div>
-                </transition>
 
                 <!-- Main Card -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-3xl p-8 border border-slate-100">
