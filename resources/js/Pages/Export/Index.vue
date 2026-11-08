@@ -11,16 +11,6 @@ interface PageProps {
     };
     [key: string]: any;
 }
-
-const successMessage = ref<string | null>(null);
-
-const triggerSuccess = (text: string) => {
-    successMessage.value = text;
-    setTimeout(() => {
-        successMessage.value = null;
-    }, 3000);
-};
-
 const page = usePage<PageProps>();
 const isPro = computed(() => page.props.auth.user?.subscribed ?? false);
 
