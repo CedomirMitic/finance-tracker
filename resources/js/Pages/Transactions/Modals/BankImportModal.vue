@@ -108,7 +108,7 @@ const closeModal = async () => {
         <div class="bg-white rounded-3xl p-8 max-w-xl w-full shadow-2xl border border-slate-100">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-black text-slate-900 tracking-tight">Smart Bank Statement Import</h3>
-                <button @click="$emit('close')" class="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-xl hover:bg-slate-100 transition-colors">✕</button>
+                <button @click="closeModal" class="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-xl hover:bg-slate-100 transition-colors">✕</button>
             </div>
 
             <!-- Flash error Section -->
@@ -173,7 +173,7 @@ const closeModal = async () => {
                 </div>
 
                 <div class="flex justify-end gap-3">
-                    <button @click="$emit('close')"
+                    <button @click="closeModal"
                         class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-sm transition-colors">Cancel</button>
                     <button @click="submitMapping" :disabled="isLoading"
                         class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 text-sm shadow-lg shadow-emerald-600/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all">
