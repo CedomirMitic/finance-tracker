@@ -34,11 +34,19 @@ createInertiaApp({
 });
 
 // --- GOOGLE TAG / GTM Tracking for INERTIA rendering ---
+let previousUrl = window.location.pathname + window.location.search;
+
 router.on('finish', () => {
-    if (typeof window.gtag === 'function') {
-        window.gtag('config', 'GTM-554P32KL', {
-            page_path: window.location.pathname + window.location.search,
-            page_title: document.title,
-        });
+    const currentUrl = window.location.pathname + window.location.search;
+
+    if (currentUrl !== previousUrl) {
+        previousUrl = currentUrl;
+
+        if (typeof window.gtag === 'function') {
+            window.gtag('config', 'GTM-554P32KL', {
+                page_path: currentUrl,
+                page_title: document.title,
+            });
+        }
     }
 });
