@@ -24,7 +24,7 @@ class ProcessSubscriptions extends Command
         $today = Carbon::now()->day;
         $currentMonth = Carbon::now()->month;
         $currentYear = Carbon::now()->year;
-        
+
         // 1. Find all "recurring" templates scheduled for billing today or handle edge cases 
         // (e.g. if today is the 31st and this month has 30 or 28 days, catch the last day of the month)
         $isLastDayOfMonth = Carbon::now()->isLastOfMonth();
@@ -32,7 +32,7 @@ class ProcessSubscriptions extends Command
         $subscriptions = Transaction::where('payment_type', 'recurring')
             ->where(function ($query) use ($today, $isLastDayOfMonth) {
                 $query->where('billing_day', $today);
-                
+
                 if ($isLastDayOfMonth) {
                     // If today is the last day of a shorter month (e.g., Feb 28 or Apr 30),
                     // also process subscriptions whose billing day exceeds today's date (e.g., day 29, 30, 31).
@@ -45,6 +45,10 @@ class ProcessSubscriptions extends Command
             // 2. Prevent duplication: check if a transaction for this exact subscription template 
             // has already been generated for the current user, description, and month/year.
             // Using template's ID or unique matching criteria.
+
+            if ($sub->created_at->isSameMonth(now(), true)) {
+                continue;
+            }
             $exists = Transaction::where('user_id', $sub->user_id)
                 ->where('description', $sub->description)
                 ->where('amount', $sub->amount)
@@ -57,12 +61,15 @@ class ProcessSubscriptions extends Command
             if (!$exists) {
                 // 3. Create a new "manual" transaction copy for the current month's billing
                 Transaction::create([
-                    'user_id'      => $sub->user_id,
-                    'description'  => $sub->description,
-                    'amount'       => $sub->amount,
-                    'type'         => $sub->type,
-                    'category'     => $sub->category,
-                    'payment_type' => 'manual', 
+                    'user_id' => $sub->user_id,
+                    'description' => $sub->description,
+                    'amount' => $sub->amount,
+                    'type' => $sub->type,
+                    'category' => $sub->category,
+                    'payment_type' => 'manual',
+                    'currency' => $sub->currency,
+                    'original_amount' => $sub->original_amount,
+                    'original_currency' => $sub->original_currency,
                 ]);
 
                 $this->info("Subscription added: {$sub->description} for user ID: {$sub->user_id}");

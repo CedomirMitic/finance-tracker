@@ -1,20 +1,13 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import type { PageProps } from '@inertiajs/core';
+import { PageProps } from '@/types';
 import { computed } from 'vue';
 
 defineProps({
     canLogin: Boolean,
     canRegister: Boolean,
 });
-
-interface CustomPageProps extends PageProps {
-    auth: {
-        user: any;
-    };
-}
-
-const page = usePage<CustomPageProps>();
+const page = usePage<PageProps>();
 const user = computed(() => page.props.auth.user);
 </script>
 
@@ -67,7 +60,8 @@ const user = computed(() => page.props.auth.user);
             </h1>
 
             <p class="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed">
-                The modern full-stack boilerplate to track cashflow, auto-parse bank statements, and build custom
+                The modern full-stack boilerplate to track cashflow, import bank statements from CSV or Excel, and build
+                custom
                 financial dashboards.
             </p>
 
@@ -93,7 +87,7 @@ const user = computed(() => page.props.auth.user);
             </div>
 
             <!-- Demo Banner -->
-            <div
+            <div v-if="page.props.demoMode"
                 class="p-4 bg-white/80 backdrop-blur border border-emerald-100 rounded-2xl shadow-sm max-w-md mx-auto mb-16 flex items-center justify-between text-left">
                 <div>
                     <span class="text-xs uppercase font-extrabold text-emerald-600 tracking-wider block">Instant Live
@@ -118,8 +112,8 @@ const user = computed(() => page.props.auth.user);
                     </div>
                     <div class="flex gap-2">
                         <span
-                            class="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-semibold">Active
-                            Sync</span>
+                            class="px-3 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl text-xs font-semibold">Sample
+                            preview</span>
                         <span class="px-3 py-1 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold">EUR /
                             USD</span>
                     </div>
@@ -238,6 +232,7 @@ const user = computed(() => page.props.auth.user);
                             <li class="flex items-center gap-2">✓ Up to 15 transactions / month</li>
                             <li class="flex items-center gap-2">✓ CSV export available</li>
                             <li class="text-slate-400 flex items-center gap-2">✕ Budgets (Pro only)</li>
+                            <li class="text-slate-400 flex items-center gap-2">✕ Bank statement import (Pro only)</li>
                             <li class="text-slate-400 flex items-center gap-2">✕ PDF reports (Pro only)</li>
                         </ul>
                     </div>
@@ -262,12 +257,13 @@ const user = computed(() => page.props.auth.user);
                             <li class="flex items-center gap-2">✓ Unlimited transactions</li>
                             <li class="flex items-center gap-2">✓ Advanced Budgets & Category caps</li>
                             <li class="flex items-center gap-2">✓ Professional PDF reports export</li>
+                            <li class="flex items-center gap-2">✓ CSV & Excel bank statement import</li>
                             <li class="flex items-center gap-2">✓ Full CSV export available</li>
                         </ul>
                     </div>
-                    <Link href="/register"
+                    <Link :href="user ? route('billing.index') : '/register'"
                         class="w-full py-4 bg-emerald-500 text-slate-950 font-black rounded-2xl hover:bg-emerald-400 transition-all text-center block shadow-lg shadow-emerald-500/20">
-                        Upgrade to Pro
+                        {{ user?.subscribed ? 'Manage subscription' : 'Upgrade to Pro' }}
                     </Link>
                 </div>
             </div>

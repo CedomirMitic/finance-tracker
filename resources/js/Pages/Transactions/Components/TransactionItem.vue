@@ -69,7 +69,7 @@ const formatDate = (dateString: string) => {
                     {{ transaction.type === 'income' ? '+' : '-' }}{{ formatCurrency(Number(transaction.amount),
                     transaction.currency) }}
                 </p>
-                <p class="text-gray-400 text-[10px] md:text-sm">{{ formatDate(transaction.created_at) }}</p>
+                <p class="text-gray-400 text-[10px] md:text-sm">{{ formatDate(transaction.effective_date) }}</p>
             </div>
 
             <!-- EDIT BUTTON -->

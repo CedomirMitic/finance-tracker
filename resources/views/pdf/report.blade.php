@@ -80,7 +80,7 @@
         <tbody>
             @foreach($transactions as $t)
                 <tr>
-                    <td style="color: #64748b;">{{ $t->created_at->format('d.m.Y') }}</td>
+                    <td style="color: #64748b;">{{ $t->effective_date->format('d.m.Y') }}</td>
                     <td style="text-transform: capitalize; font-weight: bold; color: #475569;">{{ $t->category }}</td>
                     <td style="color: #1e293b;">{{ $t->description }}</td>
                     <td class="amount {{ $t->type === 'expense' ? 'expense' : 'income' }}">

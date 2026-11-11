@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Transaction;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -16,16 +17,18 @@ class ExportController extends Controller
 
     public function download(Request $request)
     {
-        $request->validate([
-            'month' => 'required',
-            'year' => 'required',
+        $validated = $request->validate([
+            'month' => 'required|numeric|between:1,12',
+            'year' => 'required|numeric|between:2000,2100',
             'format' => 'required|in:csv',
         ]);
 
+        $year = (int) $validated['year'];
+        $month = (int) $validated['month'];
+
         $transactions = $request->user()->transactions()
-            ->whereYear('created_at', $request->year)
-            ->whereMonth('created_at', $request->month)
-            ->orderBy('created_at', 'asc')
+            ->inMonth($year, $month)
+            ->orderByRaw(Transaction::EFFECTIVE_DATE . ' asc')
             ->get();
 
         $fileName = "report_{$request->year}_{$request->month}.csv";
@@ -34,11 +37,13 @@ class ExportController extends Controller
             $file = fopen('php://output', 'w');
             fputcsv($file, ['Date', 'Category', 'Description', 'Type', 'Amount', 'Currency']);
 
+            $safe = fn($value) => preg_match('/^[=+\-@]/', (string) $value) ? "'" . $value : $value;
+
             foreach ($transactions as $t) {
                 fputcsv($file, [
-                    $t->created_at->format('Y-m-d'),
-                    $t->category,
-                    $t->description,
+                    $t->effective_date,
+                    $safe($t->category),
+                    $safe($t->description),
                     $t->type,
                     $t->amount,
                     $t->currency,
@@ -60,14 +65,17 @@ class ExportController extends Controller
         if (!Gate::allows('pro-user')) {
             abort(403, 'PDF Export is restricted to Pro users.');
         }
-        $request->validate([
-            'month' => ['required', 'numeric', 'between:1,12'],
-            'year' => ['required', 'numeric', 'digits:4'],
+        $validated = $request->validate([
+            'month' => 'required|numeric|between:1,12',
+            'year' => 'required|numeric|min:2000|max:2100',
         ]);
 
+        $year = (int) $validated['year'];
+        $month = (int) $validated['month'];
+
         $transactions = $request->user()->transactions()
-            ->whereYear('created_at', $request->year)
-            ->whereMonth('created_at', $request->month)
+            ->inMonth($year, $month)
+            ->orderByRaw(Transaction::EFFECTIVE_DATE . ' asc')
             ->get();
 
         $totalExpenses = $transactions->where('type', 'expense')->sum('amount');

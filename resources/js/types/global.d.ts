@@ -4,6 +4,12 @@ declare global {
     var route: typeof routeFn;
 }
 
+declare module 'vue' {
+    interface ComponentCustomProperties {
+        route: typeof routeFn;
+    }
+}
+
 declare module '@/Layouts/AuthenticatedLayout.vue' {
     import { DefineComponent } from 'vue';
     const component: DefineComponent<{}, {}, any>;

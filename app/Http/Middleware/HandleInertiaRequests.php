@@ -40,6 +40,7 @@ class HandleInertiaRequests extends Middleware
                     'preferred_currency' => $request->user()->preferred_currency,
                 ] : null,
             ],
+            'demoMode' => (bool) config('app.demo_mode'),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

@@ -56,9 +56,9 @@ class TransactionController extends Controller
 
         $validated = $request->validate([
             'description' => 'required|string|min:3|max:255',
-            'amount' => 'required|numeric|gt:0',
+            'amount' => 'required|numeric|gt:0|max:99999999',
             'type' => 'required|in:income,expense',
-            'category' => 'required|string',
+            'category' => 'required|string|max:255',
             'payment_type' => 'required|in:manual,recurring',
             'billing_day' => 'required_if:payment_type,recurring|nullable|integer|min:1|max:28',
         ]);
@@ -81,17 +81,19 @@ class TransactionController extends Controller
 
         $validated = $request->validate([
             'description' => 'required|string|min:3|max:255',
-            'amount' => 'required|numeric|gt:0',
+            'amount' => 'required|numeric|gt:0|max:99999999',
             'type' => 'required|in:income,expense',
-            'category' => 'required|string',
+            'category' => 'required|string|max:255',
             'payment_type' => 'required|in:manual,recurring',
             'billing_day' => 'required_if:payment_type,recurring|nullable|integer|min:1|max:28',
         ]);
 
         $user = $request->user();
-        $validated['original_amount'] = $validated['amount'];
-        $validated['original_currency'] = $user->preferred_currency ?? 'EUR';
-        $validated['currency'] = $user->preferred_currency ?? 'EUR';
+        if ((float) $validated['amount'] !== (float) $transaction->amount) {
+            $validated['original_amount'] = $validated['amount'];
+            $validated['original_currency'] = $user->preferred_currency ?? 'EUR';
+            $validated['currency'] = $user->preferred_currency ?? 'EUR';
+        }
 
         $transaction->update($validated);
 

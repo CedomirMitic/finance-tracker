@@ -106,7 +106,11 @@ class BankImportController extends Controller
 
         $rawRows = [];
         $handle = fopen($file->getRealPath(), 'r');
-        while (($row = fgetcsv($handle)) !== false) {
+        $firstLine = fgets($handle);
+        rewind($handle);
+        $delimiter = substr_count($firstLine, ';') > substr_count($firstLine, ',') ? ';' : ',';
+        
+        while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
             $rawRows[] = $row;
         }
         fclose($handle);

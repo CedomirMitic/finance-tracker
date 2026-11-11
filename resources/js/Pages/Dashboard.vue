@@ -2,7 +2,7 @@
 declare function route(name?: string, params?: any): string;[]
 import type { ApexOptions } from 'apexcharts';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, usePage} from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { formatCurrency } from '@/Utils/formatters';
 import { computed } from 'vue';
 import VueApexCharts from "vue3-apexcharts";
@@ -19,7 +19,7 @@ const userCurrency = computed(() => page.props.auth.user?.preferred_currency ?? 
 
 const chartOptions = computed<ApexOptions>(() => ({
     chart: {
-        type: 'bar', 
+        type: 'bar',
         toolbar: { show: false }
     },
     plotOptions: {
@@ -30,9 +30,11 @@ const chartOptions = computed<ApexOptions>(() => ({
         }
     },
     dataLabels: { enabled: false },
-    colors: ['#10b981', '#ef4444'], // Emerald za prihod, crvena za rashod
+    colors: ['#10b981', '#ef4444'], // Emerald for income , red for expenses
     xaxis: {
-        categories: props.trend.map(t => 'Month ' + t.month)
+        categories: props.trend.map(t =>
+            new Date(t.month + '-01').toLocaleString('en', { month: 'short', timeZone: 'UTC' })
+        )
     },
     yaxis: {
         labels: {
@@ -48,13 +50,15 @@ const series = [
 </script>
 
 <template>
+
     <Head title="Dashboard" />
 
     <AuthenticatedLayout>
-<template #header>
+        <template #header>
             <div class="font-sans">
                 <h2 class="font-black text-xl sm:text-2xl text-slate-900 tracking-tight">Welcome Back!</h2>
-                <p class="text-xs text-slate-400 mt-0.5 font-medium">Here is a quick overview of your current financial standing.</p>
+                <p class="text-xs text-slate-400 mt-0.5 font-medium">Here is a quick overview of your current financial
+                    standing.</p>
             </div>
         </template>
 
@@ -65,20 +69,26 @@ const series = [
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                         <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Spent Today</p>
-                        <p class="text-2xl font-black text-red-500">{{ formatCurrency(stats.spentToday, userCurrency) }}</p>
+                        <p class="text-2xl font-black text-red-500">{{ formatCurrency(stats.spentToday, userCurrency) }}
+                        </p>
                     </div>
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                         <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Monthly Income</p>
-                        <p class="text-2xl font-black text-emerald-600">{{ formatCurrency(stats.monthlyIncome, userCurrency) }}</p>
+                        <p class="text-2xl font-black text-emerald-600">{{ formatCurrency(stats.monthlyIncome,
+                            userCurrency) }}
+                        </p>
                     </div>
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                         <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Monthly Expenses</p>
-                        <p class="text-2xl font-black text-slate-800">{{ formatCurrency(stats.monthlyExpenses, userCurrency) }}</p>
+                        <p class="text-2xl font-black text-slate-800">{{ formatCurrency(stats.monthlyExpenses,
+                            userCurrency) }}
+                        </p>
                     </div>
                     <!-- Prebačeno sa indigo na emerald temu -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-emerald-100 bg-emerald-50/30">
                         <p class="text-xs font-black text-emerald-500 uppercase tracking-widest mb-1">Savings</p>
-                        <p class="text-2xl font-black text-emerald-700">{{ formatCurrency(stats.savings, userCurrency) }}</p>
+                        <p class="text-2xl font-black text-emerald-700">{{ formatCurrency(stats.savings, userCurrency)
+                            }}</p>
                     </div>
                 </div>
 
@@ -101,12 +111,15 @@ const series = [
                             <div v-for="t in recentTransactions" :key="t.id"
                                 class="flex justify-between items-center pb-4 border-b border-slate-50 last:border-0">
                                 <div>
-                                    <p class="text-sm font-bold text-slate-700 capitalize">{{ t.description || t.category }}</p>
-                                    <p class="text-[10px] text-slate-400 uppercase tracking-tighter">{{ t.category }}</p>
+                                    <p class="text-sm font-bold text-slate-700 capitalize">{{ t.description ||
+                                        t.category }}</p>
+                                    <p class="text-[10px] text-slate-400 uppercase tracking-tighter">{{ t.category }}
+                                    </p>
                                 </div>
                                 <p :class="t.type === 'expense' ? 'text-red-500' : 'text-emerald-600'"
                                     class="font-black text-sm">
-                                    {{ t.type === 'expense' ? '-' : '+' }}{{ formatCurrency(Number(t.display_amount ?? t.amount), userCurrency) }}
+                                    {{ t.type === 'expense' ? '-' : '+' }}{{ formatCurrency(Number(t.display_amount ??
+                                    t.amount), userCurrency) }}
                                 </p>
                             </div>
                             <div v-if="recentTransactions.length === 0"

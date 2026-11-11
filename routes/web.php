@@ -8,12 +8,11 @@ use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\TransactionController;
 use App\Models\User;
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
 
 require __DIR__ . '/auth.php';
 
@@ -36,15 +35,21 @@ Route::get('/privacy', function () {
 
 
 
-Route::get('/demo-login', function () {
+Route::get('/demo-login', function (Request $request) {
+    abort_unless(config('app.demo_mode'), 404);
+
     $user = User::firstOrCreate(
         ['email' => 'test@example.com'],
-        [
-            'name' => 'Demo User',
-            'password' => Hash::make('test123123'),
-        ]
+        ['name' => 'Demo User', 'password' => Hash::make('test123123')]
     );
+
+    if (! $user->hasVerifiedEmail()) {
+        $user->markEmailAsVerified();
+    }
+
     Auth::login($user);
+    $request->session()->regenerate();
+
     return redirect('/dashboard');
 });
 
@@ -54,9 +59,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update')->middleware('not.demo');
     Route::patch('/profile/currency', [ProfileController::class, 'updateCurrency'])->name('profile.currency.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy')->middleware('not.demo');
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
@@ -80,20 +85,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/transactions/import-store', [BankImportController::class, 'store'])->name('transactions.import.store');
     Route::post('/transactions/import/cancel', [BankImportController::class, 'cancel'])->name('transactions.import.cancel');
 });
-
-// Automatic Subscription Checker
-
-Route::get('/run-cron-secure-token-12345', function () {
-    try {
-        Artisan::call('subscriptions:process');
-        Log::info('Subscriptions processed successfully via external cron.');
-        return response()->json(['status' => 'success', 'message' => 'Subscriptions processed.']);
-    } catch (\Exception $e) {
-        Log::error('Cron failed: ' . $e->getMessage());
-        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-    }
-});
-
 // Check if job is done
 
 Route::get('/user/background-status', function () {

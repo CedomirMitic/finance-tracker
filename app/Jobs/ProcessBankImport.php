@@ -11,6 +11,8 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ProcessBankImport implements ShouldQueue
 {
@@ -29,6 +31,9 @@ class ProcessBankImport implements ShouldQueue
         $this->importCurrency = strtoupper($importCurrency);
     }
 
+    public $tries = 3;
+    public $backoff = [30, 120];
+
     public function handle(): void
     {
         $user = User::find($this->userId);
@@ -42,25 +47,20 @@ class ProcessBankImport implements ShouldQueue
         try {
             $targetCurrency = strtoupper($user->preferred_currency ?? 'EUR');
             $rateCache = [];
-            $count = 0;
+            $records = [];
 
+            
             foreach ($this->rows as $row) {
-                $rawAmount = $row[$this->mapping['amount_col']] ?? 0;
+                $rawAmount = $row[$this->mapping['amount_col']] ?? null;
                 $description = $row[$this->mapping['description_col']] ?? 'Imported Transaction';
 
-                $rawDate = isset($this->mapping['date_col']) && isset($row[$this->mapping['date_col']]) ? $row[$this->mapping['date_col']] : null;
-                $transactionDate = $rawDate ? date('Y-m-d', strtotime($rawDate)) : now()->toDateString();
+                
+                $cleanAmountStr = preg_replace('/[^\d.,-]/', '', (string) $rawAmount);
 
-                if (!$transactionDate || $transactionDate === '1970-01-01') {
-                    $transactionDate = now()->toDateString();
-                }
-
-                if ($rawAmount === null || $rawAmount === '') {
+              
+                if (!preg_match('/\d/', $cleanAmountStr)) {
                     continue;
                 }
-
-                
-                $cleanAmountStr = preg_replace('/[^\d.,-]/', '', str_replace([' ', 'RSD', 'EUR', 'USD', '$', '€'], '', $rawAmount));
 
                 if (strpos($cleanAmountStr, ',') !== false && strpos($cleanAmountStr, '.') !== false) {
                     if (strrpos($cleanAmountStr, ',') > strrpos($cleanAmountStr, '.')) {
@@ -73,56 +73,85 @@ class ProcessBankImport implements ShouldQueue
                 }
 
                 $sourceAmount = abs($cleanAmount);
-                $amountInTarget = $sourceAmount;
 
-                
-                if ($this->importCurrency !== $targetCurrency) {
-                    $cacheKey = "{$transactionDate}_{$this->importCurrency}_{$targetCurrency}";
-
-                    if (!array_key_exists($cacheKey, $rateCache)) {
-                        $historicalRate = null;
-                        try {
-                            $response = Http::timeout(5)->get("https://api.frankfurter.app/{$transactionDate}?from={$this->importCurrency}&to={$targetCurrency}");
-                            if ($response->successful()) {
-                                $historicalRate = $response->json("rates.{$targetCurrency}");
-                            }
-                        } catch (\Exception $e) {
-                            Log::error("Historical currency API error for {$transactionDate}: " . $e->getMessage());
-                        }
-                        $rateCache[$cacheKey] = $historicalRate;
-                    }
-
-                    if ($rateCache[$cacheKey] && $rateCache[$cacheKey] > 0) {
-                        $amountInTarget = $sourceAmount * $rateCache[$cacheKey];
-                    }
+                if ($sourceAmount == 0) {
+                    continue;
                 }
 
-                Transaction::create([
+                $rawDate = isset($this->mapping['date_col']) && isset($row[$this->mapping['date_col']])
+                    ? $row[$this->mapping['date_col']] : null;
+                $transactionDate = $rawDate ? date('Y-m-d', strtotime($rawDate)) : now()->toDateString();
+
+                if (!$transactionDate || $transactionDate === '1970-01-01') {
+                    $transactionDate = now()->toDateString();
+                }
+
+                $amountInTarget = $sourceAmount;
+
+                if ($this->importCurrency !== $targetCurrency) {
+                    $amountInTarget = $sourceAmount * $this->getRate($transactionDate, $targetCurrency, $rateCache);
+                }
+
+                $records[] = [
                     'user_id' => $user->id,
                     'imported_transaction_date' => $transactionDate,
-                    'amount' => round($amountInTarget, 2),    // Converted amount in preferred currency
-                    'currency' => $targetCurrency,          // Users preferred currency
-                    'original_amount' => $sourceAmount,       // Original amount from file
-                    'original_currency' => $this->importCurrency, // Original currency from file
+                    'amount' => round($amountInTarget, 2),
+                    'currency' => $targetCurrency,
+                    'original_amount' => $sourceAmount,
+                    'original_currency' => $this->importCurrency,
                     'type' => $cleanAmount < 0 ? 'expense' : 'income',
-                    'description' => trim($description),
+                    'description' => Str::limit(trim((string) $description), 255, ''),
                     'category' => 'Other',
                     'payment_type' => 'manual',
                     'billing_day' => null,
-                ]);
-
-                $count++;
+                ];
             }
 
-            Log::info("Successfully imported {$count} transactions for user ID: {$user->id}");
+            
+            DB::transaction(function () use ($records) {
+                foreach ($records as $record) {
+                    Transaction::create($record);
+                }
+            });
+
+            Log::info('Successfully imported ' . count($records) . " transactions for user ID: {$user->id}");
         } catch (\Exception $e) {
-            Log::error("Error while trying to execute a job: " . $e->getMessage() . " on line " . $e->getLine());
+            Log::error('Error while trying to execute a job: ' . $e->getMessage() . ' on line ' . $e->getLine());
             throw $e;
         } finally {
             $user->update(['background_status' => false]);
         }
     }
 
+    private function getRate(string $date, string $target, array &$rateCache): float
+    {
+        $key = "{$date}_{$this->importCurrency}_{$target}";
+
+        if (!isset($rateCache[$key])) {
+            $rate = null;
+
+            try {
+                $response = Http::timeout(5)->get("https://api.frankfurter.dev/v1/{$date}", [
+                    'from' => $this->importCurrency,
+                    'to' => $target,
+                ]);
+
+                if ($response->successful()) {
+                    $rate = $response->json("rates.{$target}");
+                }
+            } catch (\Exception $e) {
+                Log::error("Exchange rate API error for {$date}: " . $e->getMessage());
+            }
+
+            if (!$rate || $rate <= 0) {
+                throw new \RuntimeException("No exchange rate {$this->importCurrency}->{$target} for {$date}");
+            }
+
+            $rateCache[$key] = $rate;
+        }
+
+        return $rateCache[$key];
+    }
     public function failed(\Throwable $exception)
     {
         $user = User::find($this->userId);

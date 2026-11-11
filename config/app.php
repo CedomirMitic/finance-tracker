@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'UTC'),
 
     /*
     |--------------------------------------------------------------------------
@@ -104,6 +104,19 @@ return [
             explode(',', (string) env('APP_PREVIOUS_KEYS', ''))
         ),
     ],
+
+    /*
+       |--------------------------------------------------------------------------
+       | DEMO MODE SETTINGS
+       |--------------------------------------------------------------------------
+       |
+       | These configuration options determine if app is in demo mode 
+       |
+       */
+
+
+    'demo_mode' => env('DEMO_MODE', false),
+    'demo_email' => env('DEMO_EMAIL', 'test@example.com'),
 
     /*
     |--------------------------------------------------------------------------

@@ -9,9 +9,10 @@ import VueApexCharts from "vue3-apexcharts";
 import { PageProps } from '@/types';
 
 const props = defineProps<{
-    stats: Array<{ category: string, total: string }>,
+    expense_stats: Array<{ category: string, total: string }>,
+    income_stats: Array<{ category: string, total: string }>,
     budgets: Record<string, number>,
-    transactions: Array<{ id: number, category: string, description: string, amount: string, type: string, created_at: string, display_amount: number }>,
+    transactions: Array<{ id: number, category: string, description: string, amount: string, type: string, effective_date: string, display_amount: number }>,
     totalIncome: number,
     totalExpenses: number,
     availableYears: number[],
@@ -19,28 +20,41 @@ const props = defineProps<{
     selectedYear: number,
     selectedMonth: string
 }>();
-
 const page = usePage<PageProps>();
 const userCurrency = computed(() => page.props.auth.user?.preferred_currency ?? 'EUR');
 const user = computed(() => page.props.auth.user);
 
 const selectedYear = ref(props.selectedYear);
-const selectedMonth = ref(props.selectedMonth);
+const selectedMonth = ref(String(props.selectedMonth).padStart(2, '0'));
 const showingModal = ref(false);
 const showProModal = ref(false);
 const activeCategory = ref<string | null>(null);
+
+const chartMode = ref<'expense' | 'income'>('expense');
+
+const activeStats = computed(() =>
+    chartMode.value === 'expense' ? props.expense_stats : props.income_stats
+);
+
+const setMode = (mode: 'expense' | 'income') => {
+    chartMode.value = mode;
+    activeCategory.value = null;
+};
+
+const limitFor = (category: string) =>
+    chartMode.value === 'expense' ? (props.budgets[category] ?? 0) : 0;
 
 const budgetForm = useForm({
     category: '',
     amount: 0,
 });
 
-const grandTotal = computed(() => props.stats.reduce((acc, item) => acc + Number(item.total), 0));
+const grandTotal = computed(() => activeStats.value.reduce((acc, item) => acc + Number(item.total), 0));
 const netBalance = computed(() => props.totalIncome - props.totalExpenses);
 
 const filteredTransactions = computed(() => {
     if (!activeCategory.value) return [];
-    return props.transactions.filter(t => t.category === activeCategory.value && t.type === 'expense');
+    return props.transactions.filter(t => t.category === activeCategory.value && t.type === chartMode.value);
 });
 
 const updateStats = () => {
@@ -56,6 +70,7 @@ const toggleCategory = (category: string) => {
 };
 
 const openBudgetModal = (category: string) => {
+    if (chartMode.value !== 'expense') return;
     if (!user.value?.subscribed) {
         showProModal.value = true;
         return;
@@ -80,7 +95,7 @@ const redirectToUpgrade = () => {
     router.visit(route('billing.index'));
 };
 const chartOptions = computed<ApexOptions>(() => ({
-    labels: props.stats.map(item => item.category),
+    labels: activeStats.value.map(item => item.category),
     chart: {
         type: 'donut',
         animations: { enabled: true, speed: 800 },
@@ -97,7 +112,7 @@ const chartOptions = computed<ApexOptions>(() => ({
                     show: true,
                     total: {
                         show: true,
-                        label: 'Expenses',
+                        label: chartMode.value === 'expense' ? 'Expenses' : 'Income',
                         color: '#9ca3af',
                         fontSize: '12px',
                         formatter: (w) => formatCurrency(w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0), userCurrency.value)
@@ -113,30 +128,33 @@ const chartOptions = computed<ApexOptions>(() => ({
         }
     },
     grid: { padding: { top: 0, bottom: 0, left: 0, right: 0 } },
-    colors: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'],
+    colors: chartMode.value === 'expense'
+        ? ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+        : ['#059669', '#10b981', '#34d399', '#6ee7b7', '#14b8a6', '#2dd4bf'],
 }));
 
-const series = computed(() => props.stats.map(item => Number(item.total)));
+const series = computed(() => activeStats.value.map(item => Number(item.total)));
 </script>
 
 <template>
 
     <Head title="Statistics" />
     <AuthenticatedLayout>
-<template #header>
+        <template #header>
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 font-sans">
                 <div>
                     <h2 class="font-black text-xl sm:text-2xl text-slate-900 tracking-tight">Financial Statistics</h2>
-                    <p class="text-xs text-slate-400 mt-0.5 font-medium">Analyze your monthly breakdown and category limits.</p>
+                    <p class="text-xs text-slate-400 mt-0.5 font-medium">Analyze your monthly breakdown and category
+                        limits.</p>
                 </div>
+
                 
-                <!-- Selektori za mesec i godinu sa dovoljno prostora da tekst ne prelazi preko strelice -->
                 <div class="flex items-center gap-2.5">
                     <select v-model="selectedMonth" @change="updateStats"
                         class="bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:border-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all cursor-pointer">
                         <option v-for="m in months" :key="m.value" :value="m.value">{{ m.label }}</option>
                     </select>
-                    
+
                     <select v-model="selectedYear" @change="updateStats"
                         class="bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:border-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all cursor-pointer">
                         <option v-for="y in availableYears" :key="y" :value="y">{{ y }}</option>
@@ -173,6 +191,20 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
 
                 <!-- Main Chart & Breakdown Section -->
                 <div class="bg-white shadow-sm rounded-3xl border border-slate-100 p-6 sm:p-8 mb-8 overflow-hidden">
+
+                    <div class="flex gap-2 mb-6 justify-center lg:justify-start">
+                        <button type="button" @click="setMode('expense')"
+                            class="px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-wider transition"
+                            :class="chartMode === 'expense' ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'">
+                            Expenses
+                        </button>
+                        <button type="button" @click="setMode('income')"
+                            class="px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-wider transition"
+                            :class="chartMode === 'income' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'">
+                            Income
+                        </button>
+                    </div>
+
                     <div v-if="series.length > 0">
                         <div class="flex flex-col lg:flex-row items-center justify-between gap-10">
                             <div class="w-full lg:w-1/2 flex justify-center">
@@ -184,10 +216,10 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
                             <div class="flex-1 w-full max-w-md lg:max-w-none">
                                 <h4
                                     class="text-xs font-black text-slate-400 uppercase mb-6 tracking-widest text-center lg:text-left underline decoration-emerald-200 underline-offset-8">
-                                    Expense Breakdown
+                                    {{ chartMode === 'expense' ? 'Expense Breakdown' : 'Income Breakdown' }}
                                 </h4>
                                 <div class="space-y-4">
-                                    <div v-for="(item, index) in stats" :key="item.category"
+                                    <div v-for="(item, index) in activeStats" :key="item.category"
                                         @click="toggleCategory(item.category)"
                                         class="group cursor-pointer p-4 -mx-2 rounded-2xl transition hover:bg-slate-50 border border-transparent"
                                         :class="{ 'bg-emerald-50/60 border-emerald-100': activeCategory === item.category }">
@@ -196,7 +228,7 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
                                             <span
                                                 class="font-bold text-slate-700 capitalize flex items-center min-w-0 flex-1 mr-2">
                                                 <span class="truncate">{{ item.category }}</span>
-                                                <button @click.stop="openBudgetModal(item.category)" type="button"
+                                                <button v-if="chartMode === 'expense'" @click.stop="openBudgetModal(item.category)" type="button"
                                                     class="ml-2 flex-shrink-0 text-[10px] bg-slate-100 px-2 py-1 rounded-xl text-slate-500 hover:bg-emerald-600 hover:text-white transition uppercase font-extrabold flex items-center gap-1">
                                                     Budget
                                                     <span v-if="!user?.subscribed"
@@ -210,23 +242,23 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
 
                                         <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
                                             <div class="h-full transition-all duration-1000 rounded-full"
-                                                :class="budgets[item.category] > 0 && Number(item.total) > budgets[item.category] ? 'bg-red-500' : 'bg-emerald-500'"
-                                                :style="{ width: Math.min((Number(item.total) / (budgets[item.category] > 0 ? budgets[item.category] : grandTotal || 1) * 100), 100) + '%' }">
+                                                :class="limitFor(item.category) > 0 && Number(item.total) > limitFor(item.category) ? 'bg-red-500' : 'bg-emerald-500'"
+                                                :style="{ width: Math.min((Number(item.total) / (limitFor(item.category) > 0 ? limitFor(item.category) : grandTotal || 1) * 100), 100) + '%' }">
                                             </div>
                                         </div>
 
                                         <div class="flex justify-between mt-1.5 min-h-[14px]">
-                                            <div v-if="budgets[item.category] > 0" class="text-[11px] italic">
+                                            <div v-if="limitFor(item.category) > 0" class="text-[11px] italic">
                                                 <span class="text-slate-400 font-medium">Limit: {{
-                                                    formatCurrency(budgets[item.category], userCurrency) }}</span>
-                                                <span v-if="Number(item.total) > budgets[item.category]"
+                                                    formatCurrency(limitFor(item.category), userCurrency) }}</span>
+                                                <span v-if="Number(item.total) > limitFor(item.category)"
                                                     class="text-red-500 font-bold ml-1">
                                                     (Over by {{ formatCurrency(Number(item.total) -
-                                                        budgets[item.category],
+                                                        limitFor(item.category),
                                                         userCurrency) }})
                                                 </span>
                                             </div>
-                                            <p v-else class="text-[11px] text-slate-300 italic font-medium">No limit set
+                                            <p v-else-if="chartMode === 'expense'" class="text-[11px] text-slate-300 italic font-medium">No limit set
                                             </p>
                                         </div>
                                     </div>
@@ -263,7 +295,7 @@ const series = computed(() => props.stats.map(item => Number(item.total)));
                                     <tr v-for="t in filteredTransactions" :key="t.id"
                                         class="hover:bg-slate-50 transition">
                                         <td class="py-3.5 font-semibold text-slate-700">{{ t.description }}</td>
-                                        <td class="py-3.5 text-right font-black text-red-500">
+                                        <td class="py-3.5 text-right font-black" :class="chartMode === 'expense' ? 'text-red-500' : 'text-emerald-600'">
                                             {{ formatCurrency(Number(t.amount), userCurrency) }}
                                         </td>
                                     </tr>

@@ -34,7 +34,7 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -44,9 +44,16 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        event(new Registered($user));
-
-        Mail::to($user->email)->send(new WelcomeEmail($user));
+        if (config('app.demo_mode')) {
+            $user->markEmailAsVerified();
+        } else {
+            try {
+                event(new Registered($user));
+                Mail::to($user->email)->queue(new WelcomeEmail($user));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
 
         Auth::login($user);
 

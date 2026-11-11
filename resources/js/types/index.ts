@@ -9,6 +9,7 @@ export interface PageProps {
         success?: string | null;
         error?: string | null;
     }
+    demoMode: boolean,
 }
 
 export interface Transaction {
@@ -21,6 +22,7 @@ export interface Transaction {
     currency: string;
     billing_day?: number;
     category: string;
+    effective_date:string;
     created_at: string;
     original_amount?: number;
     original_currency?: string;

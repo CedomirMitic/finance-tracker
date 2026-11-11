@@ -3,40 +3,48 @@
 namespace App\Http\Controllers;
 
 use App\Models\Budget;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Validation\Rule;
 
 class StatisticsController extends Controller
 {
-public function index(Request $request): Response
+    public function index(Request $request): Response
     {
         $user = $request->user();
-        $year = $request->input('year', date('Y'));
-        $month = $request->input('month', date('m'));
-        
+        $request->validate([
+            'year' => 'nullable|numeric|between:2000,2100',
+            'month' => 'nullable|numeric|between:1,12',
+        ]);
+        $year = (int) $request->input('year', date('Y'));
+        $month = (int) $request->input('month', date('m'));
+
         $budgets = $user->budgets()->pluck('amount', 'category');
 
         $transactions = $user->transactions()
-            ->whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->orderBy('created_at', 'desc')
+            ->inMonth($year, $month)
+            ->orderByRaw(Transaction::EFFECTIVE_DATE . ' desc')
             ->get();
 
-        // Group expenses by category efficiently from the retrieved transactions collection
-        $stats = $transactions->where('type', 'expense')
+        $byCategory = fn(string $type) => $transactions->where('type', $type)
             ->groupBy('category')
-            ->map(fn ($group, $category) => [
+            ->map(fn($group, $category) => [
                 'category' => $category,
-                'total' => $group->sum('amount')
+                'total' => $group->sum('amount'),
             ])
             ->values();
 
-        $totalIncome = $transactions->where('type', 'income')->sum('amount');
-        $totalExpenses = $stats->sum('total');
+        // Group expenses by category efficiently from the retrieved transactions collection
+        $expenseStats = $byCategory('expense');
+        $incomeStats = $byCategory('income');
+
+        $totalIncome = $incomeStats->sum('total');
+        $totalExpenses = $expenseStats->sum('total');
 
         $availableYears = $user->transactions()
-            ->selectRaw("YEAR(created_at) as year")
+            ->selectRaw('YEAR(' . Transaction::EFFECTIVE_DATE . ') as year')
             ->distinct()
             ->orderBy('year', 'desc')
             ->pluck('year')
@@ -62,14 +70,15 @@ public function index(Request $request): Response
         ];
 
         return Inertia::render('Statistics/Index', [
-            'stats' => $stats,
+            'income_stats' => $incomeStats,
+            'expense_stats' => $expenseStats,
             'budgets' => $budgets,
             'totalIncome' => (float) $totalIncome,
             'totalExpenses' => (float) $totalExpenses,
             'availableYears' => $availableYears->values(),
             'months' => $months,
-            'selectedYear' => (int) $year,
-            'selectedMonth' => (string) $month,
+            'selectedYear' => $year,
+            'selectedMonth' => sprintf('%02d', $month),
             'transactions' => $transactions,
         ]);
     }
@@ -77,8 +86,14 @@ public function index(Request $request): Response
     public function updateBudget(Request $request)
     {
         $validated = $request->validate([
-            'category' => 'required|string',
-            'amount' => 'required|numeric|min:0',
+            'category' => [
+                'required',
+                'string',
+                Rule::exists('transactions', 'category')->where(fn($q) => $q
+                    ->where('user_id', auth()->id())
+                    ->where('type', 'expense')),
+            ],
+            'required|numeric|gt:0|max:99999999',
         ]);
 
         Budget::updateOrCreate(
