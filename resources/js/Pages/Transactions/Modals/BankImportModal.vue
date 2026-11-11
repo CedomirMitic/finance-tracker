@@ -104,11 +104,13 @@ const closeModal = async () => {
 </script>
 
 <template>
-    <div v-if="show" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 font-sans">
+    <div v-if="show"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 font-sans">
         <div class="bg-white rounded-3xl p-8 max-w-xl w-full shadow-2xl border border-slate-100">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-black text-slate-900 tracking-tight">Smart Bank Statement Import</h3>
-                <button @click="closeModal" class="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-xl hover:bg-slate-100 transition-colors">✕</button>
+                <button @click="closeModal"
+                    class="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-xl hover:bg-slate-100 transition-colors">✕</button>
             </div>
 
             <!-- Flash error Section -->
@@ -129,45 +131,69 @@ const closeModal = async () => {
                 </div>
             </transition>
 
+            <!-- Bank import restriction -->
+            <div v-if="!isPro" class="py-10 text-center">
+                <p class="text-sm font-semibold text-slate-700 mb-1">Bank statement import is a PRO feature.</p>
+                <p class="text-xs text-slate-400 mb-6">Upgrade to import CSV and Excel statements.</p>
+                <a href="/billing"
+                    class="px-5 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-2xl hover:bg-emerald-700 transition">
+                    Upgrade to PRO
+                </a>
+            </div>
+
             <!-- Upload File -->
-            <div v-if="step === 'upload'"
+            <div v-if="isPro && step === 'upload'"
                 class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center bg-slate-50/50 hover:bg-slate-50 transition-colors">
-                <p class="text-sm text-slate-600 mb-4 font-medium">Drag and drop bank statement (CSV, Excel) or click below</p>
+                <p class="text-sm text-slate-600 mb-4 font-medium">Drag and drop bank statement (CSV, Excel) or click
+                    below</p>
                 <input type="file" @change="handleFileUpload" accept=".csv,.txt,.xlsx,.xls"
                     class="block w-full text-sm text-slate-500 file:mx-auto file:py-2.5 file:px-5 file:rounded-2xl file:border-0 file:text-sm file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer transition-all" />
             </div>
 
             <!-- Map Columns & Currency -->
-            <div v-if="step === 'map'">
-                <p class="text-sm text-slate-500 mb-6">Select which columns match your transaction fields and choose the currency of the statement:</p>
+            <div v-if="isPro && step === 'map'">
+                <p class="text-sm text-slate-500 mb-6">Select which columns match your transaction fields and choose the
+                    currency of the statement:</p>
 
                 <div class="space-y-4 mb-8">
                     <div>
-                        <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Currency of Statement</label>
+                        <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Currency
+                            of Statement</label>
                         <Multiselect v-model="mapping.currency" :options="currencies" :searchable="true"
                             placeholder="Search currency (e.g. RSD, USD)..." track-by="value" label="label"
                             value-format="value" />
                     </div>
 
                     <div>
-                        <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Transaction Date</label>
-                        <select v-model="mapping.date_col" class="w-full border-slate-200 rounded-2xl text-sm focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
+                        <label
+                            class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Transaction
+                            Date</label>
+                        <select v-model="mapping.date_col"
+                            class="w-full border-slate-200 rounded-2xl text-sm focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
                             <option :value="null">-- Select Date Column (Optional) --</option>
-                            <option v-for="(header, index) in headers" :key="index" :value="index">{{ header }} (Sample: {{ sampleData[0]?.[index] }})</option>
+                            <option v-for="(header, index) in headers" :key="index" :value="index">{{ header }} (Sample:
+                                {{ sampleData[0]?.[index] }})</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Amount</label>
-                        <select v-model="mapping.amount_col" class="w-full border-slate-200 rounded-2xl text-sm focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
-                            <option v-for="(header, index) in headers" :key="index" :value="index">{{ header }} (Sample: {{ sampleData[0]?.[index] }})</option>
+                        <label
+                            class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Amount</label>
+                        <select v-model="mapping.amount_col"
+                            class="w-full border-slate-200 rounded-2xl text-sm focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
+                            <option v-for="(header, index) in headers" :key="index" :value="index">{{ header }} (Sample:
+                                {{ sampleData[0]?.[index] }})</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Description / Purpose</label>
-                        <select v-model="mapping.description_col" class="w-full border-slate-200 rounded-2xl text-sm focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
-                            <option v-for="(header, index) in headers" :key="index" :value="index">{{ header }} (Sample: {{ sampleData[0]?.[index] }})</option>
+                        <label
+                            class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Description
+                            / Purpose</label>
+                        <select v-model="mapping.description_col"
+                            class="w-full border-slate-200 rounded-2xl text-sm focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
+                            <option v-for="(header, index) in headers" :key="index" :value="index">{{ header }} (Sample:
+                                {{ sampleData[0]?.[index] }})</option>
                         </select>
                     </div>
                 </div>

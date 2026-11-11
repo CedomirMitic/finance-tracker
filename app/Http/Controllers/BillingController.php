@@ -27,8 +27,15 @@ class BillingController extends Controller
     {
         if ($request->user()->subscribed('default'))
             return redirect()->route('billing.index');
-        
+
         $priceId = config('services.stripe.price_id');
+
+        if (blank($priceId)) {
+            report(new \RuntimeException('STRIPE_PRICE_ID is not configured.'));
+
+            return redirect()->route('billing.index')
+                ->with('error', 'Billing is not configured yet. Please try again later.');
+        }
 
         return $request->user()
             ->newSubscription('default', $priceId)

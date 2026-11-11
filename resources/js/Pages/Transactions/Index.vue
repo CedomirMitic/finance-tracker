@@ -132,6 +132,7 @@ onUnmounted(() => {
                         <button @click="isImportModalOpen = true"
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-2xl shadow-sm transition-all">
                             📁 Bank Import
+                            <span v-if="!isPro" class="ml-1 text-[8px] bg-amber-100 text-amber-800 px-1 rounded-lg">PRO</span>
                         </button>
                     </div>
                 </div>

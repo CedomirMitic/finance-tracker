@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Jobs\ProcessCurrencyConversion;
+use App\Services\CurrencyService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Services\CurrencyService;
+use Laravel\Cashier\Cashier;
 
 class ProfileController extends Controller
 {
@@ -78,6 +79,26 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+
+        try {
+            if ($user->subscribed('default')) {
+                $user->subscription('default')->cancelNow();
+            }
+
+            if ($user->hasStripeId()) {
+                Cashier::stripe()->customers->delete($user->stripe_id);
+            }
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->withErrors(['password' => 'Could not cancel your subscription. Please try again.']);
+        }
+
+        foreach ($user->subscriptions as $subscription) {
+            $subscription->items()->delete();
+            $subscription->delete();
+        }
+
 
         Auth::logout();
 
