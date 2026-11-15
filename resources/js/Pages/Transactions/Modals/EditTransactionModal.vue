@@ -19,23 +19,24 @@ const editForm = useForm({
     category: 'Food'
 });
 
+const fillForm = () => {
+    const t = props.transactionToEdit;
+    if (!t) return;
+
+    editForm.description = t.description;
+    editForm.amount = Number(t.amount);
+    editForm.type = t.type;
+    editForm.payment_type = t.payment_type;
+    editForm.billing_day = t.billing_day || 1;
+    editForm.category = t.category;
+    editForm.clearErrors();
+};
+
 // Watch when the modal opens to fill out the form
-watch(() => props.transactionToEdit, (transaction) => {
-    if (transaction) {
-        editForm.description = transaction.description;
-        editForm.amount = Number(transaction.amount);
-        editForm.type = transaction.type;
-        editForm.payment_type = transaction.payment_type;
-        editForm.billing_day = transaction.billing_day || 1;
-        editForm.category = transaction.category;
-    }
+watch(() => [props.show, props.transactionToEdit], () => {
+    if (props.show) fillForm();
 }, { immediate: true });
 
-watch(() => editForm.payment_type, (newType) => {
-    if (newType === 'manual') {
-        editForm.billing_day = null;
-    }
-});
 
 const updateTransaction = () => {
     if (!props.transactionToEdit) return;
@@ -59,12 +60,14 @@ const updateTransaction = () => {
             class="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8 overflow-hidden transform transition-all border border-slate-100">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-black text-slate-900 tracking-tight">Edit Transaction</h3>
-                <button @click="emit('close')" class="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-xl hover:bg-slate-100 transition-colors">✕</button>
+                <button @click="emit('close')"
+                    class="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-xl hover:bg-slate-100 transition-colors">✕</button>
             </div>
 
             <form @submit.prevent="updateTransaction" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
+                    <label
+                        class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
                     <input v-model="editForm.description" type="text"
                         class="w-full border-slate-200 rounded-2xl focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
                     <span v-if="editForm.errors.description" class="text-red-500 text-xs mt-1 font-semibold">
@@ -73,7 +76,8 @@ const updateTransaction = () => {
                 </div>
 
                 <div>
-                    <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Amount</label>
+                    <label
+                        class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Amount</label>
                     <input v-model="editForm.amount" type="number" step="0.01"
                         class="w-full border-slate-200 rounded-2xl focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
                     <span v-if="editForm.errors.amount" class="text-red-500 text-xs mt-1 font-semibold">
@@ -83,15 +87,19 @@ const updateTransaction = () => {
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Type</label>
-                        <select v-model="editForm.type" class="w-full border-slate-200 rounded-2xl focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
+                        <label
+                            class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Type</label>
+                        <select v-model="editForm.type"
+                            class="w-full border-slate-200 rounded-2xl focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
                             <option value="expense">Expense (-)</option>
                             <option value="income">Income (+)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Category</label>
-                        <select v-model="editForm.category" class="w-full border-slate-200 rounded-2xl focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
+                        <label
+                            class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Category</label>
+                        <select v-model="editForm.category"
+                            class="w-full border-slate-200 rounded-2xl focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
                             <option value="Salary">Salary</option>
                             <option value="Food">Food</option>
                             <option value="Transport">Transport</option>
@@ -102,20 +110,22 @@ const updateTransaction = () => {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Payment Type</label>
-                        <select v-model="editForm.payment_type" class="w-full border-slate-200 rounded-2xl focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
-                            <option value="manual">Manual</option>
-                            <option value="recurring">Recurring</option>
-                        </select>
-                    </div>
-                    <div v-if="editForm.payment_type === 'recurring'">
-                        <label class="block text-xs font-black text-emerald-600 uppercase tracking-wider mb-1.5">Billing Day</label>
-                        <select v-model="editForm.billing_day" class="w-full border-slate-200 rounded-2xl focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
-                            <option v-for="day in 28" :key="day" :value="day">Every {{ day }}. of the month</option>
-                        </select>
-                    </div>
+                <p class="text-xs text-slate-400 font-medium">
+                    {{ editForm.payment_type === 'recurring'
+                        ? '🔄 Recurring: changes apply to future charges only.'
+                        : 'One-time transaction.' }}
+                </p>
+
+                <div v-if="editForm.payment_type === 'recurring'">
+                    <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Billing
+                        Day</label>
+                    <select v-model="editForm.billing_day"
+                        class="w-full border-slate-200 rounded-2xl focus:border-emerald-500 focus:ring-emerald-500 text-slate-800 font-medium py-3">
+                        <option v-for="day in 28" :key="day" :value="day">Day {{ day }}</option>
+                    </select>
+                    <span v-if="editForm.errors.billing_day" class="text-red-500 text-xs mt-1 font-semibold">
+                        {{ editForm.errors.billing_day }}
+                    </span>
                 </div>
 
                 <div class="flex justify-end gap-3 mt-8">

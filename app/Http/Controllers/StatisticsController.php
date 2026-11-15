@@ -23,7 +23,7 @@ class StatisticsController extends Controller
 
         $budgets = $user->budgets()->pluck('amount', 'category');
 
-        $transactions = $user->transactions()
+        $transactions = $user->manualTransactions()
             ->inMonth($year, $month)
             ->orderByRaw(Transaction::EFFECTIVE_DATE . ' desc')
             ->get();
@@ -43,7 +43,7 @@ class StatisticsController extends Controller
         $totalIncome = $incomeStats->sum('total');
         $totalExpenses = $expenseStats->sum('total');
 
-        $availableYears = $user->transactions()
+        $availableYears = $user->manualTransactions()
             ->selectRaw('YEAR(' . Transaction::EFFECTIVE_DATE . ') as year')
             ->distinct()
             ->orderBy('year', 'desc')
@@ -93,7 +93,7 @@ class StatisticsController extends Controller
                     ->where('user_id', auth()->id())
                     ->where('type', 'expense')),
             ],
-            'required|numeric|gt:0|max:99999999',
+            'amount' => 'required|numeric|min:0|max:99999999',
         ]);
 
         Budget::updateOrCreate(

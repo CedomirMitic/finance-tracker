@@ -55,6 +55,21 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Transaction::class);
     }
 
+
+    /**
+     * Transactions type
+     */
+
+    public function manualTransactions(): HasMany
+    {
+        return $this->transactions()->where('payment_type', 'manual');
+    }
+
+    public function recurringTransactions(): HasMany
+    {
+        return $this->transactions()->where('payment_type', 'recurring');
+    }
+
     public function budgets()
     {
         return $this->hasMany(Budget::class);

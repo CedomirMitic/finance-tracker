@@ -14,31 +14,22 @@ class TransactionController extends Controller
         $user = $request->user();
         $preferredCurrency = $user->preferred_currency ?? 'EUR';
 
-        $query = $user->transactions();
-
         // Paginate 10 transactions per page
-        $transactions = $query->latest('created_at')->paginate(10);
+        $transactions = $user->manualTransactions()->latest('created_at')->paginate(10);
 
-        $totalBalance = $user->transactions()
+        $totalBalance = $user->manualTransactions()
             ->selectRaw("sum(case when type = 'income' then amount else -amount end) as total")
             ->value('total') ?? 0;
 
-        $recurringIncome = $user->transactions()
-            ->where('payment_type', 'recurring')
-            ->where('type', 'income')
-            ->sum('amount');
+        $recurringTransactions = $user->recurringTransactions()->orderBy('billing_day')->get();
 
-        $recurringExpenses = $user->transactions()
-            ->where('payment_type', 'recurring')
-            ->where('type', 'expense')
-            ->sum('amount');
-
-        $activeSubsCount = $user->transactions()
-            ->where('payment_type', 'recurring')
-            ->count();
+        $recurringIncome = $recurringTransactions->where('type', 'income')->sum('amount');
+        $recurringExpenses = $recurringTransactions->where('type', 'expense')->sum('amount');
+        $activeSubsCount = $recurringTransactions->count();
 
         return Inertia::render('Transactions/Index', [
             'transactions' => $transactions,
+            'recurringTransactions' => $recurringTransactions,
             'totalBalance' => (float) $totalBalance,
             'recurringIncome' => (float) ($recurringIncome ?? 0),
             'recurringExpenses' => (float) ($recurringExpenses ?? 0),
@@ -70,7 +61,11 @@ class TransactionController extends Controller
 
         $user->transactions()->create($validated);
 
-        return redirect()->back()->with('success', 'Transaction was added successfully!');
+        $message = $validated['payment_type'] === 'recurring'
+            ? 'Recurring transaction saved. It will be recorded automatically on the billing day.'
+            : 'Transaction was added successfully!';
+
+        return redirect()->back()->with('success', $message);
     }
 
     public function update(Request $request, Transaction $transaction)
@@ -79,14 +74,18 @@ class TransactionController extends Controller
             abort(403);
         }
 
-        $validated = $request->validate([
+        $rules = [
             'description' => 'required|string|min:3|max:255',
             'amount' => 'required|numeric|gt:0|max:99999999',
             'type' => 'required|in:income,expense',
             'category' => 'required|string|max:255',
-            'payment_type' => 'required|in:manual,recurring',
-            'billing_day' => 'required_if:payment_type,recurring|nullable|integer|min:1|max:28',
-        ]);
+        ];
+
+        if ($transaction->payment_type === 'recurring') {
+            $rules['billing_day'] = 'required|integer|min:1|max:28';
+        }
+
+        $validated = $request->validate($rules);
 
         $user = $request->user();
         if ((float) $validated['amount'] !== (float) $transaction->amount) {
@@ -117,11 +116,10 @@ class TransactionController extends Controller
             abort(403);
         }
 
-        $transaction->update([
-            'payment_type' => 'manual',
-            'billing_day' => null
-        ]);
+        abort_unless($transaction->payment_type === 'recurring', 422);
 
-        return redirect()->back()->with('success', 'Subscription was successfully modified');
+        $transaction->delete();
+
+        return redirect()->back()->with('success', 'Recurring transaction was cancelled. Past charges stay in your history.');
     }
 }

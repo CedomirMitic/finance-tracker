@@ -26,7 +26,7 @@ class ExportController extends Controller
         $year = (int) $validated['year'];
         $month = (int) $validated['month'];
 
-        $transactions = $request->user()->transactions()
+        $transactions = $request->user()->manualTransactions()
             ->inMonth($year, $month)
             ->orderByRaw(Transaction::EFFECTIVE_DATE . ' asc')
             ->get();
@@ -73,7 +73,7 @@ class ExportController extends Controller
         $year = (int) $validated['year'];
         $month = (int) $validated['month'];
 
-        $transactions = $request->user()->transactions()
+        $transactions = $request->user()->manualTransactions()
             ->inMonth($year, $month)
             ->orderByRaw(Transaction::EFFECTIVE_DATE . ' asc')
             ->get();

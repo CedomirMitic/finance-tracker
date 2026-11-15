@@ -13,17 +13,17 @@ class DashboardController extends Controller
         $user = auth()->user();
         $now = Carbon::now();
 
-        $spentToday = $user->transactions()->onDate(today())->where('type', 'expense')->sum('amount');
+        $spentToday = $user->manualTransactions()->onDate(today())->where('type', 'expense')->sum('amount');
 
-        $monthlyIncome = $user->transactions()
+        $monthlyIncome = $user->manualTransactions()
             ->inMonth($now->year, $now->month)->where('type', 'income')->sum('amount');
 
-        $monthlyExpenses = $user->transactions()
+        $monthlyExpenses = $user->manualTransactions()
             ->inMonth($now->year, $now->month)->where('type', 'expense')->sum('amount');
 
-        $recentTransactions = $user->transactions()->latest()->limit(5)->get();
+        $recentTransactions = $user->manualTransactions()->latest()->limit(5)->get();
             
-        $trend = $user->transactions()
+        $trend = $user->manualTransactions()
             ->selectRaw("DATE_FORMAT(" . Transaction::EFFECTIVE_DATE . ", '%Y-%m') as month")
             ->selectRaw("SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as income")
             ->selectRaw("SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expense")

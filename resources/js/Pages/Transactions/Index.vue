@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import Modal from '@/Components/Modal.vue';
 import { Head, usePage, router } from '@inertiajs/vue3';
 import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { formatCurrency } from '@/Utils/formatters';
@@ -12,6 +13,7 @@ const props = defineProps<{
     transactions: PaginatedResponse<Transaction>;
     totalBalance: number;
     recurringIncome: number;
+    recurringTransactions: Transaction[];
     recurringExpenses: number;
     activeSubsCount: number;
 }>();
@@ -43,6 +45,19 @@ const transactionToEdit = ref<Transaction | null>(null);
 const openEditModal = (transaction: Transaction) => {
     transactionToEdit.value = transaction;
     isEditModalOpen.value = true;
+};
+
+
+//Recurring Modal
+const isRecurringModalOpen = ref(false);
+
+const editFromRecurring = (t: Transaction) => {
+    isRecurringModalOpen.value = false;
+    openEditModal(t);
+};
+const cancelFromRecurring = (t: Transaction) => {
+    isRecurringModalOpen.value = false;
+    confirmDelete(t);
 };
 
 // State for loader
@@ -104,10 +119,11 @@ onUnmounted(() => {
     <Head title="Transactions" />
 
     <AuthenticatedLayout>
-<template #header>
+        <template #header>
             <div class="font-sans">
                 <h2 class="font-black text-xl sm:text-2xl text-slate-900 tracking-tight">Transactions</h2>
-                <p class="text-xs text-slate-400 mt-0.5 font-medium">View, edit, and manage all your income and expense records.</p>
+                <p class="text-xs text-slate-400 mt-0.5 font-medium">View, edit, and manage all your income and expense
+                    records.</p>
             </div>
         </template>
 
@@ -132,7 +148,8 @@ onUnmounted(() => {
                         <button @click="isImportModalOpen = true"
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-2xl shadow-sm transition-all">
                             📁 Bank Import
-                            <span v-if="!isPro" class="ml-1 text-[8px] bg-amber-100 text-amber-800 px-1 rounded-lg">PRO</span>
+                            <span v-if="!isPro"
+                                class="ml-1 text-[8px] bg-amber-100 text-amber-800 px-1 rounded-lg">PRO</span>
                         </button>
                     </div>
                 </div>
@@ -180,10 +197,14 @@ onUnmounted(() => {
                 <!-- Monthly Recurring Overview -->
                 <div v-if="activeSubsCount > 0"
                     class="mb-8 overflow-hidden bg-white border text-center border-slate-100 rounded-3xl shadow-sm">
-                    <div class="bg-slate-50/80 px-5 py-4 border-b border-slate-100">
+                    <div class="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center justify-between">
                         <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                             Monthly Recurring Overview
                         </h3>
+                        <button type="button" @click="isRecurringModalOpen = true"
+                            class="text-[10px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-wider">
+                            View all ({{ activeSubsCount }}) →
+                        </button>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
@@ -256,6 +277,20 @@ onUnmounted(() => {
 
         <EditTransactionModal :show="isEditModalOpen" :transactionToEdit="transactionToEdit"
             @close="isEditModalOpen = false" />
+
+        <Modal :show="isRecurringModalOpen" @close="isRecurringModalOpen = false" max-width="2xl">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-black text-slate-900">Recurring transactions</h2>
+                    <button type="button" @click="isRecurringModalOpen = false"
+                        class="text-slate-400 hover:text-slate-600 text-sm font-bold">&times; Close</button>
+                </div>
+                <div class="space-y-3 max-h-[60vh] overflow-y-auto">
+                    <TransactionItem v-for="t in recurringTransactions" :key="t.id" :transaction="t"
+                        @edit="editFromRecurring" @delete="cancelFromRecurring" />
+                </div>
+            </div>
+        </Modal>
 
     </AuthenticatedLayout>
 </template>

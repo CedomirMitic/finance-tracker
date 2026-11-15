@@ -45,10 +45,7 @@ class ProcessSubscriptions extends Command
             // 2. Prevent duplication: check if a transaction for this exact subscription template 
             // has already been generated for the current user, description, and month/year.
             // Using template's ID or unique matching criteria.
-
-            if ($sub->created_at->isSameMonth(now(), true)) {
-                continue;
-            }
+            
             $exists = Transaction::where('user_id', $sub->user_id)
                 ->where('description', $sub->description)
                 ->where('amount', $sub->amount)

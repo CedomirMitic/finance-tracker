@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Transaction extends Model
 {
@@ -38,30 +38,34 @@ class Transaction extends Model
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Scope for dates
+     */
+
     public function scopeBetweenDates(Builder $query, $from, $to): Builder
-{
-    return $query->whereRaw(self::EFFECTIVE_DATE . ' BETWEEN ? AND ?', [
-        Carbon::parse($from)->toDateString(),
-        Carbon::parse($to)->toDateString(),
-    ]);
-}
+    {
+        return $query->whereRaw(self::EFFECTIVE_DATE . ' BETWEEN ? AND ?', [
+            Carbon::parse($from)->toDateString(),
+            Carbon::parse($to)->toDateString(),
+        ]);
+    }
 
-public function scopeInMonth(Builder $query, int $year, int $month): Builder
-{
-    $start = Carbon::create($year, $month, 1);
+    public function scopeInMonth(Builder $query, int $year, int $month): Builder
+    {
+        $start = Carbon::create($year, $month, 1);
 
-    return $query->betweenDates($start, $start->copy()->endOfMonth());
-}
+        return $query->betweenDates($start, $start->copy()->endOfMonth());
+    }
 
-public function scopeOnDate(Builder $query, $date): Builder
-{
-    return $query->betweenDates($date, $date);
-}
+    public function scopeOnDate(Builder $query, $date): Builder
+    {
+        return $query->betweenDates($date, $date);
+    }
 
-protected function effectiveDate(): Attribute
-{
-    return Attribute::get(fn () => Carbon::parse(
-        $this->imported_transaction_date ?? $this->created_at
-    )->toDateString());
-}
+    protected function effectiveDate(): Attribute
+    {
+        return Attribute::get(fn() => Carbon::parse(
+            $this->imported_transaction_date ?? $this->created_at
+        )->toDateString());
+    }
 }
