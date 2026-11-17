@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\ProcessBankImport;
+use App\Services\CurrencyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
-use App\Services\CurrencyService;
+use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
 
 class BankImportController extends Controller
@@ -58,23 +59,38 @@ class BankImportController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, CurrencyService $currencyService)
     {
         if (!Gate::allows('pro-user')) {
             abort(403, 'Unauthorized');
         }
 
-        $request->validate([
-            'amount_col' => 'required|integer',
-            'description_col' => 'required|integer',
-            'currency' => 'required|string|size:3',
-            'date_col' => 'nullable|integer',
-        ]);
+        $currencies = array_column($currencyService->getSupportedCurrencies(), 'value');
+
+        $request->validate(
+            [
+                'amount_col' => 'required|integer|min:0',
+                'description_col' => 'required|integer|min:0|different:amount_col',
+                'date_col' => 'nullable|integer|min:0|different:amount_col|different:description_col',
+                'currency' => array_filter(['required', 'string', 'size:3', $currencies ? Rule::in($currencies) : null]),
+            ],
+            [
+                'description_col.different' => 'Description column must be different from amount column.',
+                'date_col.different' => 'Date column must be different from amount column and description column.',
+            ]
+        );
 
         $rows = session('import_rows');
 
         if (!$rows || empty($rows)) {
             return back()->withErrors(['file' => 'Import session expired. Please upload the file again.']);
+        }
+
+        $from = strtoupper($request->currency);
+        $to = strtoupper($request->user()->preferred_currency ?? 'EUR');
+
+        if ($from !== $to && !$currencyService->isRateServiceAvailable($from, $to)) {
+            return back()->withErrors(['file' => 'The exchange rate service is not available right now. Please try again later.']);
         }
 
         ProcessBankImport::dispatch(
@@ -109,7 +125,7 @@ class BankImportController extends Controller
         $firstLine = fgets($handle);
         rewind($handle);
         $delimiter = substr_count($firstLine, ';') > substr_count($firstLine, ',') ? ';' : ',';
-        
+
         while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
             $rawRows[] = $row;
         }

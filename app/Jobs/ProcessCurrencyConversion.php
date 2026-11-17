@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Exceptions\ExchangeRateUnavailableException;
 use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
@@ -10,6 +11,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -19,6 +22,8 @@ class ProcessCurrencyConversion implements ShouldQueue
 
     public $user;
     public $newCurrency;
+    public $tries = 1;
+    public $timeout = 600;
 
     public function __construct(User $user, string $newCurrency)
     {
@@ -32,27 +37,33 @@ class ProcessCurrencyConversion implements ShouldQueue
 
         try {
             $rateCache = [];
-            $newCurrency = $this->newCurrency;
+            $updates = [];
 
-            $this->user->transactions()->chunk(100, function ($transactions) use ($newCurrency, &$rateCache) {
-                foreach ($transactions as $transaction) {
-                    $from = $transaction->original_currency ?? $transaction->currency;
-                    $sourceAmount = $transaction->original_amount ?? $transaction->amount;
-                    $to = $newCurrency;
-                    $rawDate = $transaction->imported_transaction_date ?? $transaction->created_at;
-                    $date = $rawDate ? Carbon::parse($rawDate)->toDateString() : now()->toDateString();
 
-                    $rate = $this->getExchangeRate($from, $to, $date, $rateCache);
+            foreach ($this->user->transactions()->cursor() as $transaction) {
+                $from = $transaction->original_currency ?? $transaction->currency;
+                $sourceAmount = $transaction->original_amount ?? $transaction->amount;
+                $date = Carbon::parse($transaction->imported_transaction_date ?? $transaction->created_at)->toDateString();
 
-                    Transaction::where('id', $transaction->id)->update([
-                        'amount' => round($sourceAmount * $rate, 2),
-                        'currency' => $to,
+                $rate = $this->getExchangeRate($from, $this->newCurrency, $date, $rateCache);
+
+                $updates[$transaction->id] = round($sourceAmount * $rate, 2);
+            }
+
+
+            DB::transaction(function () use ($updates) {
+                foreach ($updates as $id => $amount) {
+                    Transaction::where('id', $id)->update([
+                        'amount' => $amount,
+                        'currency' => $this->newCurrency,
                     ]);
                 }
-            });
 
+                User::whereKey($this->user->id)->update(['preferred_currency' => $this->newCurrency]);
+            });
         } catch (\Exception $e) {
-            Log::error("Error while trying to execute a job: " . $e->getMessage() . " on line " . $e->getLine());
+            Log::error('Error while trying to execute a job: ' . $e->getMessage() . ' on line ' . $e->getLine());
+            $this->reportFailure();
             throw $e;
         } finally {
             $this->user->update(['background_status' => false]);
@@ -95,29 +106,23 @@ class ProcessCurrencyConversion implements ShouldQueue
             Log::warning("Historical exchange rate error for {$formattedDate}: " . $e->getMessage());
         }
 
-        try {
-            $response = Http::timeout(5)->get("https://api.frankfurter.dev/v1/latest", [
-                'from' => $from,
-                'to' => $to,
-            ]);
-
-            if ($response->successful()) {
-                $rate = $response->json("rates.{$to}");
-                if ($rate) {
-                    return $rate;
-                }
-            }
-        } catch (\Exception $e) {
-            Log::warning("Latest exchange rate fallback error: " . $e->getMessage());
-        }
-
-        return 1;
+        throw new ExchangeRateUnavailableException("No exchange rate {$from}->{$to} for {$date}");
     }
 
     public function failed(\Throwable $exception)
     {
         if ($this->user) {
             $this->user->update(['background_status' => false]);
+            $this->reportFailure();
         }
+    }
+
+    private function reportFailure(): void
+    {
+        Cache::put(
+            "background_error.{$this->user->id}",
+            'Currency conversion failed because the exchange rate service is not available. Nothing was changed. Please try again later.',
+            now()->addHour()
+        );
     }
 }

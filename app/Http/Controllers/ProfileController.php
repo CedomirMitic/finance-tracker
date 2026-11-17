@@ -33,6 +33,13 @@ class ProfileController extends Controller
 
     public function updateCurrency(Request $request, CurrencyService $currencyService): RedirectResponse
     {
+
+        $currencies = $currencyService->getSupportedCurrencies();
+
+        if (empty($currencies)) {
+            return Redirect::route('profile.edit')
+                ->with('error', 'The exchange rate service is not available right now. Please try again later.');
+        }
         $validated = $request->validate([
             'preferred_currency' => ['required', 'string', Rule::in(array_column($currencyService->getSupportedCurrencies(), 'value'))],
         ]);
@@ -45,12 +52,20 @@ class ProfileController extends Controller
             return Redirect::route('profile.edit')->with('success', 'Currency updated successfully.');
         }
 
-        $user->update(['preferred_currency' => $newCurrency]);
+        if ($user->background_status) {
+            return Redirect::route('profile.edit')
+                ->with('error', 'A background task is still running. Please wait until it finishes.');
+        }
+
+        if (!$currencyService->isRateServiceAvailable($oldCurrency, $newCurrency)) {
+            return Redirect::route('profile.edit')
+                ->with('error', 'The exchange rate service is not available right now. Your currency was not changed.');
+        }
 
         // Dispatch background job for currency conversion
         ProcessCurrencyConversion::dispatch($user, $newCurrency);
 
-        return Redirect::route('profile.edit')->with('success', 'Currency updated. Transactions are being converted in the background.');
+        return Redirect::route('profile.edit')->with('success', 'Conversion started. Your currency will change once all transactions are converted.');
     }
 
     /**

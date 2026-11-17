@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -43,7 +44,7 @@ class HandleInertiaRequests extends Middleware
             'demoMode' => (bool) config('app.demo_mode'),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
-                'error' => fn () => $request->session()->get('error'),
+                'error' => fn () => $request->session()->get('error') ?? ($request->user() ? Cache::pull("background_error.{$request->user()->id}") : null),
             ],
         ];
     }

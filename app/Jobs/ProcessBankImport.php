@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Exceptions\ExchangeRateUnavailableException;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
@@ -9,10 +10,11 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class ProcessBankImport implements ShouldQueue
 {
@@ -31,8 +33,7 @@ class ProcessBankImport implements ShouldQueue
         $this->importCurrency = strtoupper($importCurrency);
     }
 
-    public $tries = 3;
-    public $backoff = [30, 120];
+    public $tries = 1;
 
     public function handle(): void
     {
@@ -48,41 +49,33 @@ class ProcessBankImport implements ShouldQueue
             $targetCurrency = strtoupper($user->preferred_currency ?? 'EUR');
             $rateCache = [];
             $records = [];
+            $skipped = 0;
+            $badDates = 0;
+            $dateMapped = isset($this->mapping['date_col']);
 
-            
+
             foreach ($this->rows as $row) {
                 $rawAmount = $row[$this->mapping['amount_col']] ?? null;
-                $description = $row[$this->mapping['description_col']] ?? 'Imported Transaction';
+                $description = trim((string) ($row[$this->mapping['description_col']] ?? '')) ?: 'Imported Transaction';
 
-                
-                $cleanAmountStr = preg_replace('/[^\d.,-]/', '', (string) $rawAmount);
 
-              
-                if (!preg_match('/\d/', $cleanAmountStr)) {
+                $cleanAmount = $this->parseAmount($rawAmount);
+
+                if ($cleanAmount === null || $cleanAmount == 0) {
+                    $skipped++;
                     continue;
-                }
-
-                if (strpos($cleanAmountStr, ',') !== false && strpos($cleanAmountStr, '.') !== false) {
-                    if (strrpos($cleanAmountStr, ',') > strrpos($cleanAmountStr, '.')) {
-                        $cleanAmount = floatval(str_replace('.', '', str_replace(',', '.', $cleanAmountStr)));
-                    } else {
-                        $cleanAmount = floatval(str_replace(',', '', $cleanAmountStr));
-                    }
-                } else {
-                    $cleanAmount = floatval(str_replace(',', '.', $cleanAmountStr));
                 }
 
                 $sourceAmount = abs($cleanAmount);
 
-                if ($sourceAmount == 0) {
-                    continue;
-                }
+                $transactionDate = $dateMapped && isset($row[$this->mapping['date_col']])
+                    ? $this->parseDate($row[$this->mapping['date_col']])
+                    : null;
 
-                $rawDate = isset($this->mapping['date_col']) && isset($row[$this->mapping['date_col']])
-                    ? $row[$this->mapping['date_col']] : null;
-                $transactionDate = $rawDate ? date('Y-m-d', strtotime($rawDate)) : now()->toDateString();
-
-                if (!$transactionDate || $transactionDate === '1970-01-01') {
+                if ($transactionDate === null) {
+                    if ($dateMapped) {
+                        $badDates++;
+                    }
                     $transactionDate = now()->toDateString();
                 }
 
@@ -100,14 +93,22 @@ class ProcessBankImport implements ShouldQueue
                     'original_amount' => $sourceAmount,
                     'original_currency' => $this->importCurrency,
                     'type' => $cleanAmount < 0 ? 'expense' : 'income',
-                    'description' => Str::limit(trim((string) $description), 255, ''),
+                    'description' => Str::limit($description, 255, ''),
                     'category' => 'Other',
                     'payment_type' => 'manual',
                     'billing_day' => null,
                 ];
             }
 
-            
+
+            if (empty($records) || $skipped > count($this->rows) / 2) {
+                throw new \RuntimeException('Most rows do not contain a valid amount.');
+            }
+
+            if ($dateMapped && $badDates > count($records) / 2) {
+                throw new \RuntimeException('Most rows do not contain a valid date.');
+            }
+
             DB::transaction(function () use ($records) {
                 foreach ($records as $record) {
                     Transaction::create($record);
@@ -117,6 +118,7 @@ class ProcessBankImport implements ShouldQueue
             Log::info('Successfully imported ' . count($records) . " transactions for user ID: {$user->id}");
         } catch (\Exception $e) {
             Log::error('Error while trying to execute a job: ' . $e->getMessage() . ' on line ' . $e->getLine());
+            $this->reportFailure($e);
             throw $e;
         } finally {
             $user->update(['background_status' => false]);
@@ -144,7 +146,7 @@ class ProcessBankImport implements ShouldQueue
             }
 
             if (!$rate || $rate <= 0) {
-                throw new \RuntimeException("No exchange rate {$this->importCurrency}->{$target} for {$date}");
+                throw new ExchangeRateUnavailableException("No exchange rate {$this->importCurrency}->{$target} for {$date}");
             }
 
             $rateCache[$key] = $rate;
@@ -152,11 +154,93 @@ class ProcessBankImport implements ShouldQueue
 
         return $rateCache[$key];
     }
+    private function reportFailure(\Throwable $e): void
+    {
+        $message = $e instanceof ExchangeRateUnavailableException
+            ? 'Import failed because the exchange rate service is not available. Nothing was imported. Please try again later.'
+            : 'Import failed. Nothing was imported. Please check your file and column mapping and try again.';
+
+        Cache::put("background_error.{$this->userId}", $message, now()->addHour());
+    }
+
     public function failed(\Throwable $exception)
     {
         $user = User::find($this->userId);
         if ($user) {
             $user->update(['background_status' => false]);
         }
+
+        $this->reportFailure($exception);
+    }
+
+
+
+    private function parseAmount(mixed $raw): ?float
+    {
+
+        if (is_int($raw) || is_float($raw)) {
+            return (float) $raw;
+        }
+
+
+        $value = trim(str_ireplace([$this->importCurrency, '€', '$', '£', '¥'], '', (string) $raw));
+
+
+        if (!preg_match('/^\(?\s*([\-+]?)\s*(\d[\d\s.,\']*)\)?$/', $value, $m)) {
+            return null;
+        }
+
+        $negative = $m[1] === '-' || str_starts_with($value, '(');
+        $num = preg_replace('/[\s\']/', '', $m[2]);
+
+        $lastComma = strrpos($num, ',');
+        $lastDot = strrpos($num, '.');
+
+        if ($lastComma !== false && $lastDot !== false) {
+
+            $decimal = $lastComma > $lastDot ? ',' : '.';
+            $thousands = $decimal === ',' ? '.' : ',';
+            $num = str_replace($decimal, '.', str_replace($thousands, '', $num));
+        } elseif ($lastComma !== false || $lastDot !== false) {
+            $sep = $lastComma !== false ? ',' : '.';
+            $parts = explode($sep, $num);
+            $last = end($parts);
+
+            if (count($parts) > 2 || strlen($last) === 3) {
+
+                $validGroups = strlen($parts[0]) >= 1 && strlen($parts[0]) <= 3
+                    && collect(array_slice($parts, 1))->every(fn($p) => strlen($p) === 3);
+
+                if (!$validGroups) {
+                    return null;
+                }
+
+                $num = implode('', $parts);
+            } else {
+                $num = $parts[0] . '.' . $last;
+            }
+        }
+
+        if (!preg_match('/^\d+(\.\d{1,3})?$/', $num)) {
+            return null;
+        }
+
+        return $negative ? -(float) $num : (float) $num;
+    }
+
+
+    private function parseDate(mixed $raw): ?string
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+
+        if (is_numeric($raw) && $raw > 20000 && $raw < 80000) {
+            return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($raw)->format('Y-m-d');
+        }
+
+        $timestamp = strtotime((string) $raw);
+
+        return $timestamp ? date('Y-m-d', $timestamp) : null;
     }
 }

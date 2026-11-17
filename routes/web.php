@@ -39,8 +39,8 @@ Route::get('/demo-login', function (Request $request) {
     abort_unless(config('app.demo_mode'), 404);
 
     $user = User::firstOrCreate(
-        ['email' => 'test@example.com'],
-        ['name' => 'Demo User', 'password' => Hash::make('test123123')]
+        ['email' => config('app.demo_email')],
+        ['name' => 'Demo User', 'password' => Hash::make(config('app.demo_password'))]
     );
 
     if (! $user->hasVerifiedEmail()) {
@@ -74,8 +74,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/statistics/budget', [StatisticsController::class, 'updateBudget'])->name('statistics.budget.update');
 
     Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
-    Route::get('/billing/checkout', [BillingController::class, 'checkout'])->name('billing.checkout');
-    Route::get('/billing/portal', [BillingController::class, 'portal'])->name('billing.portal');
+    Route::get('/billing/checkout', [BillingController::class, 'checkout'])->name('billing.checkout')->middleware('not.demo');
+    Route::get('/billing/portal', [BillingController::class, 'portal'])->name('billing.portal')->middleware('not.demo');
 
     Route::get('/export', [ExportController::class, 'index'])->name('export.index');
     Route::get('/export/download', [ExportController::class, 'download'])->name('export.download');

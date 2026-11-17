@@ -201,7 +201,7 @@ onUnmounted(() => {
                         <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                             Monthly Recurring Overview
                         </h3>
-                        <button type="button" @click="isRecurringModalOpen = true"
+                        <button type="button" @click="isRecurringModalOpen = true" :disabled="isConverting"
                             class="text-[10px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-wider">
                             View all ({{ activeSubsCount }}) →
                         </button>
@@ -211,7 +211,7 @@ onUnmounted(() => {
                         <div class="p-6">
                             <p class="text-[10px] font-black text-emerald-600 uppercase tracking-wider mb-1">Fixed
                                 Income</p>
-                            <p class="text-xl font-black text-slate-800">{{ formatCurrency(recurringIncome,
+                            <p v-if="!isConverting" class="text-xl font-black text-slate-800">{{ formatCurrency(recurringIncome,
                                 userCurrency) }}</p>
                             <p class="text-xs text-slate-400 mt-1">Guaranteed monthly inflow</p>
                         </div>
@@ -219,7 +219,7 @@ onUnmounted(() => {
                         <div class="p-6">
                             <p class="text-[10px] font-black text-red-500 uppercase tracking-wider mb-1">Fixed Expenses
                             </p>
-                            <p class="text-xl font-black text-slate-800">{{ formatCurrency(recurringExpenses,
+                            <p v-if="!isConverting" class="text-xl font-black text-slate-800">{{ formatCurrency(recurringExpenses,
                                 userCurrency) }}
                             </p>
                             <p class="text-xs text-slate-400 mt-1">Subscriptions & commitments</p>
@@ -228,7 +228,7 @@ onUnmounted(() => {
                         <div class="p-6 bg-slate-50/50">
                             <p class="text-[10px] font-black text-emerald-600 uppercase tracking-wider mb-1">Predictable
                                 Net</p>
-                            <p class="text-xl font-black"
+                            <p v-if="!isConverting" class="text-xl font-black"
                                 :class="recurringNet >= 0 ? 'text-emerald-700' : 'text-red-600'">
                                 {{ recurringNet >= 0 ? '+' : '' }}{{ formatCurrency(recurringNet, userCurrency) }}
                             </p>

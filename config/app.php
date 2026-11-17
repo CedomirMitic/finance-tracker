@@ -117,6 +117,7 @@ return [
 
     'demo_mode' => env('DEMO_MODE', false),
     'demo_email' => env('DEMO_EMAIL', 'test@example.com'),
+    'demo_password' => env('DEMO_PASSWORD', 'test123123'),
 
     /*
     |--------------------------------------------------------------------------
