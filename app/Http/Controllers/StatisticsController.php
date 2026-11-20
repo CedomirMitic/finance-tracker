@@ -43,16 +43,6 @@ class StatisticsController extends Controller
         $totalIncome = $incomeStats->sum('total');
         $totalExpenses = $expenseStats->sum('total');
 
-        $availableYears = $user->manualTransactions()
-            ->selectRaw('YEAR(' . Transaction::EFFECTIVE_DATE . ') as year')
-            ->distinct()
-            ->orderBy('year', 'desc')
-            ->pluck('year')
-            ->map(fn($y) => (int) $y);
-
-        if ($availableYears->isEmpty()) {
-            $availableYears = collect([(int) date('Y')]);
-        }
 
         $months = [
             ['value' => '01', 'label' => 'January'],
@@ -75,7 +65,7 @@ class StatisticsController extends Controller
             'budgets' => $budgets,
             'totalIncome' => (float) $totalIncome,
             'totalExpenses' => (float) $totalExpenses,
-            'availableYears' => $availableYears->values(),
+            'availableYears' => $request->user()->availableYears(),
             'months' => $months,
             'selectedYear' => $year,
             'selectedMonth' => sprintf('%02d', $month),

@@ -10,9 +10,13 @@ use Inertia\Inertia;
 
 class ExportController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Inertia::render('Export/Index');
+
+        return Inertia::render('Export/Index', [
+
+            'availableYears' => $request->user()->availableYears(),
+        ]);
     }
 
     public function download(Request $request)

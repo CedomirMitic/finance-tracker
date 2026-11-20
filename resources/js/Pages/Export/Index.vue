@@ -11,10 +11,11 @@ interface PageProps {
     };
     [key: string]: any;
 }
+const props = defineProps<{ availableYears: number[] }>();
 const page = usePage<PageProps>();
 const isPro = computed(() => page.props.auth.user?.subscribed ?? false);
 
-const years = [2024, 2025, 2026];
+const years = computed(() => props.availableYears);
 const months = [
     { v: '01', l: 'January' }, { v: '02', l: 'February' }, { v: '03', l: 'March' },
     { v: '04', l: 'April' }, { v: '05', l: 'May' }, { v: '06', l: 'June' },

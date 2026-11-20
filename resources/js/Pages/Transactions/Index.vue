@@ -73,7 +73,9 @@ const startPolling = () => {
 // Function to check status in database
 const checkStatus = async () => {
     try {
-        const response = await fetch('/user/background-status');
+        const response = await fetch('/user/background-status', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
+        });
         const data = await response.json();
 
         isConverting.value = data.background_status;
@@ -93,7 +95,9 @@ const checkStatus = async () => {
 // Check on page loading
 onMounted(async () => {
     try {
-        const response = await fetch('/user/background-status');
+        const response = await fetch('/user/background-status', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
+        });
         const data = await response.json();
 
         if (data.background_status) {
@@ -211,7 +215,8 @@ onUnmounted(() => {
                         <div class="p-6">
                             <p class="text-[10px] font-black text-emerald-600 uppercase tracking-wider mb-1">Fixed
                                 Income</p>
-                            <p v-if="!isConverting" class="text-xl font-black text-slate-800">{{ formatCurrency(recurringIncome,
+                            <p v-if="!isConverting" class="text-xl font-black text-slate-800">{{
+                                formatCurrency(recurringIncome,
                                 userCurrency) }}</p>
                             <p class="text-xs text-slate-400 mt-1">Guaranteed monthly inflow</p>
                         </div>
@@ -219,7 +224,8 @@ onUnmounted(() => {
                         <div class="p-6">
                             <p class="text-[10px] font-black text-red-500 uppercase tracking-wider mb-1">Fixed Expenses
                             </p>
-                            <p v-if="!isConverting" class="text-xl font-black text-slate-800">{{ formatCurrency(recurringExpenses,
+                            <p v-if="!isConverting" class="text-xl font-black text-slate-800">{{
+                                formatCurrency(recurringExpenses,
                                 userCurrency) }}
                             </p>
                             <p class="text-xs text-slate-400 mt-1">Subscriptions & commitments</p>

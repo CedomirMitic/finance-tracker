@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Transaction extends Model
 {
@@ -68,4 +69,22 @@ class Transaction extends Model
             $this->imported_transaction_date ?? $this->created_at
         )->toDateString());
     }
+
+    public static function yearSql(): string
+{
+    return match (DB::connection()->getDriverName()) {
+        'pgsql' => 'CAST(EXTRACT(YEAR FROM ' . self::EFFECTIVE_DATE . ') AS INTEGER)',
+        'sqlite' => "CAST(strftime('%Y', " . self::EFFECTIVE_DATE . ') AS INTEGER)',
+        default => 'YEAR(' . self::EFFECTIVE_DATE . ')',
+    };
+}
+
+public static function monthKeySql(): string
+{
+    return match (DB::connection()->getDriverName()) {
+        'pgsql' => "to_char(" . self::EFFECTIVE_DATE . ", 'YYYY-MM')",
+        'sqlite' => "strftime('%Y-%m', " . self::EFFECTIVE_DATE . ')',
+        default => "DATE_FORMAT(" . self::EFFECTIVE_DATE . ", '%Y-%m')",
+    };
+}
 }

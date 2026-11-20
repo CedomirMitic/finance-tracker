@@ -24,7 +24,7 @@ class DashboardController extends Controller
         $recentTransactions = $user->manualTransactions()->latest()->limit(5)->get();
             
         $trend = $user->manualTransactions()
-            ->selectRaw("DATE_FORMAT(" . Transaction::EFFECTIVE_DATE . ", '%Y-%m') as month")
+            ->selectRaw(Transaction::monthKeySql() . ' as month')
             ->selectRaw("SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as income")
             ->selectRaw("SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expense")
             ->betweenDates(today()->subMonths(5)->startOfMonth(), today())
