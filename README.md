@@ -10,13 +10,22 @@ The demo account has Pro features unlocked. Changing the password or e-mail, del
 
 ## Screenshots
 
-| Dashboard | Statistics |
+### PC
+| Welcome Page | Dashboard |
 | --- | --- |
-| ![Dashboard](docs/screenshots/dashboard.jpg) | ![Statistics](docs/screenshots/statistics.jpg) |
+| ![WelcomePage](docs/screenshots/landing-page.jpg) | ![Dashboard](docs/screenshots/dashboard.jpg) |
+|Mobile|
+| --- | --- |
+| <img src="docs/screenshots/landing-page-mobile.jpg" width="240" alt="Mobile view"> | <img src="docs/screenshots/dashboard-mobile.jpg" width="240" alt="Mobile view">  |
 
-| Bank import | Mobile |
+
+| Export| Transactions |
 | --- | --- |
-| ![Bank import](docs/screenshots/bank-import.jpg) | <img src="docs/screenshots/bank-import-mobile.jpg" width="240" alt="Mobile view"> |
+| ![Export](docs/screenshots/export.jpg) | ![Transactions](docs/screenshots/transactions.jpg) |
+
+
+
+mobile 
 
 ---
 
