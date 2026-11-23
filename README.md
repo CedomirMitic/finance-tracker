@@ -14,7 +14,6 @@ The demo account has Pro features unlocked. Changing the password or e-mail, del
 | --- | --- |
 | ![WelcomePage](docs/screenshots/landing-page.jpg) | ![Dashboard](docs/screenshots/dashboard.jpg) |
 | Mobile view |
-| --- |
 | <img src="docs/screenshots/landing-page-mobile.jpg"  alt="Mobile view"> | <img src="docs/screenshots/dashboard-mobile.jpg"  alt="Mobile view">  |
 
 
