@@ -160,7 +160,7 @@ const closeModal = async () => {
                         <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Currency
                             of Statement</label>
                         <Multiselect v-model="mapping.currency" :options="currencies" :searchable="true"
-                            placeholder="Search currency (e.g. RSD, USD)..." track-by="value" label="label"
+                            placeholder="Search currency (e.g. EUR, USD)..." track-by="value" label="label"
                             value-format="value" />
                     </div>
 

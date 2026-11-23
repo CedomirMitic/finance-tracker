@@ -1,10 +1,17 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "cedomir/finance-tracker-kit",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
-    "license": "MIT",
+    "description": "Personal finance SaaS starter kit built with Laravel 12, Vue 3 and Inertia.js.",
+    "keywords": [
+        "laravel",
+        "vue",
+        "inertia",
+        "stripe",
+        "saas",
+        "finance"
+    ],
+    "license": "proprietary",
     "require": {
         "php": "^8.2",
         "barryvdh/laravel-dompdf": "^3.1",
@@ -17,7 +24,6 @@
         "resend/resend-php": "^1.13",
         "sentry/sentry-laravel": "^4.27",
         "tightenco/ziggy": "^2.0"
-
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

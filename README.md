@@ -1,87 +1,120 @@
-# 💰 Personal Finance Manager
+# FinanceTracker
 
-A modern, full-stack SaaS financial management application built with a focus on performance, type safety, security, data visualization, and seamless transactional workflows. This project demonstrates a robust "Modern Monolith" architecture by seamlessly connecting a production-ready Laravel backend with a reactive Vue 3 frontend.
+A personal finance web app: track income and expenses, set category budgets, import bank statements, switch currencies and upgrade to a Pro plan through Stripe.
 
----
+Built with **Laravel 12**, **Vue 3 (TypeScript)** and **Inertia.js**.
 
-## 🚀 Live Demo
+**Live demo:** https://finance-tracker-cedomir.up.railway.app/
+Click **Try Demo** on the landing page to sign in with a shared demo account (`test@example.com` / `test123123`).
+The demo account has Pro features unlocked. Changing the password or e-mail, deleting the account and Stripe actions are disabled, and its data is reset every night.
 
-* **URL:** https://finance-tracker-cedomir.up.railway.app/
-* **Test Credentials:**
-  * **Email:** `test@example.com`
-  * **Password:** `test123123`
+## Screenshots
 
----
+| Dashboard | Statistics |
+| --- | --- |
+| ![Dashboard](docs/screenshots/dashboard.jpg) | ![Statistics](docs/screenshots/statistics.jpg) |
 
-## 🚀 Key Features
-
-* **📊 Interactive Analytics:** High-level overview of Total Income, Total Expenses, and Net Balance powered by ApexCharts.
-* **📉 Smart Budgeting:** Set monthly limits for specific categories with real-time visual progress indicators.
-* **⏳ Automatic Subscriptions:** Automate recurring transactions like rent or subscriptions with flexible billing schedule management.
-* **🌍 Multi-Currency Support & Live Rates:** Seamlessly switch user currency in profile settings with automatic live conversion and rate updates powered by the Frankfurter API across the entire UI.
-* **📂 Smart PDF & CSV Bank Import:** Advanced file parser allowing users to upload any bank statement (PDF or CSV), dynamically map columns (Date, Amount, Description, Currency), and bulk-import transactions effortlessly.
-* **📧 Transactional Emails via Resend:** Reliable, modern email delivery for user verification flows, welcome messages, and account notifications powered by Resend *(Currently in Test mode)*.
-* **🔍 Transaction Drill-down:** Click on any category to instantly filter and inspect the specific transactions contributing to that total.
-* **📄 Advanced Data Export:** Generate professional PDF reports (Pro tier) or CSV files with instant client-side feedback and auto-dismissing notifications.
-* **💳 SaaS Billing & Subscriptions:** Fully integrated Stripe Checkout and Customer Portal supporting Free tier limits, Pro upgrades, and complete subscription lifecycle management via Laravel Cashier *(Currently configured with Stripe Test mode keys)*.
-* **🔒 Production Ready & Error Tracking:** Comprehensive backend error tracking and monitoring using Sentry, secure background job processing, and legal compliance pages (ToS & Privacy Policy).
-* **📱 Responsive UI:** Fully optimized for both desktop and mobile views using Tailwind CSS.
+| Bank import | Mobile |
+| --- | --- |
+| ![Bank import](docs/screenshots/bank-import.jpg) | <img src="docs/screenshots/bank-import-mobile.jpg" width="240" alt="Mobile view"> |
 
 ---
 
-## 🛠 Tech Stack
+## Features
 
-* **Backend:** Laravel 12 (PHP)
-* **Frontend:** Vue 3 (Composition API) with TypeScript
-* **Bridge:** Inertia.js (Seamless SPA experience)
-* **Email Service:** Resend (Transactional emails)
-* **Styling:** Tailwind CSS
-* **Build Tool:** Vite
-* **Database & Billing:** MySQL (Aiven) & Stripe (Laravel Cashier)
-* **Key Libraries & Services:**
-  * `barryvdh/laravel-dompdf` (PDF Generation)
-  * `vue3-apexcharts` (Data Visualization)
-  * `ziggy-js` (Named Laravel routes in TypeScript)
-  * `Sentry` (Backend Error Monitoring)
-  * `Frankfurter API` (Foreign Exchange & Multi-currency rates)
+**Everyday tracking**
+- Dashboard with today's spending, monthly income / expenses / savings, a 6-month income vs. expenses chart and the latest transactions.
+- Add, edit and delete transactions, grouped into categories, with pagination.
+- Recurring transactions (rent, subscriptions): a monthly template with a billing day. A scheduled job creates the real transaction on that day. Templates are shown in a separate "Monthly recurring overview" and are not counted as transactions.
+
+**Statistics and budgets**
+- Month / year selector, donut chart by category (expenses or income) and drill-down to the transactions behind each category.
+- Monthly budget per expense category with an "over by" warning (Pro).
+
+**Bank statement import (Pro)**
+- Upload a CSV or Excel file (up to 5 MB), map the date / description / amount columns and choose the statement currency.
+- Understands common number formats (`1.234,56`, `1,234.56`, `(45,50)`), rejects wrongly mapped columns instead of importing garbage, and imports everything or nothing.
+- Runs in a background queue job. Imported rows keep their original date.
+
+**Multi-currency**
+- Change the account currency in the profile. All transactions are re-converted with historical exchange rates from the [Frankfurter API](https://frankfurter.dev). If the rate service is unavailable the change is refused and nothing is modified.
+
+**Export**
+- CSV export for everyone, PDF report for Pro. CSV cells are protected against spreadsheet formula injection.
+
+**Billing (Stripe + Laravel Cashier)**
+- Free plan (15 transactions / month) and Pro plan with Stripe Checkout and the Customer Portal.
+- Subscription state is kept in sync through Stripe webhooks, cancellations keep Pro until the paid period ends, and deleting an account cancels the Stripe subscription.
+
+**Accounts and operations**
+- E-mail verification and transactional e-mails (Resend), login rate limiting, error tracking with Sentry.
+- A demo mode with a one-click demo login and a nightly reset.
 
 ---
 
-## 🌐 Production Deployment & Configuration Notes
+## Tech stack
 
-* **Infrastructure:** Hosted on Railway using standard container deployment, connected to an external Aiven MySQL database.
-* **External Services (Test Mode):** Both Stripe and Resend are currently set up using Test credentials for seamless portfolio demonstration. *(Note: Resend in test mode delivers emails only to verified addresses until a custom domain is configured).*
-* **Security:** Forced HTTPS scheme in production via AppServiceProvider to ensure secure asset loading and seamless Stripe webhook processing.
-* **Background Processing & Queues:** Dedicated queue workers handling currency synchronization jobs and heavy bank import parsing tasks asynchronously.
+| Area | Technology |
+| --- | --- |
+| Backend | Laravel 12, PHP 8.2+ |
+| Frontend | Vue 3 (Composition API) + TypeScript, Inertia.js 2, Tailwind CSS, ApexCharts |
+| Database | MySQL or PostgreSQL |
+| Payments | Stripe, Laravel Cashier |
+| Queue / scheduler | Laravel database queue, one nightly artisan command |
+| Files | Laravel Excel (import), DomPDF (reports) |
+| Other | Resend (e-mail), Sentry, Frankfurter API (exchange rates), Ziggy |
+| Hosting | Railway (web, queue worker and cron services) |
 
 ---
 
-📦 Installation & Setup
+## Design decisions worth a look
+
+- **Modern monolith.** Inertia keeps routing, validation and authentication in Laravel while the UI stays a Vue SPA. No separate API to maintain.
+- **Planned vs. actual money.** A recurring template is a plan, the transaction created by the scheduler is the real one. Balance, statistics and exports only count real transactions.
+- **One "effective date".** Reports use the transaction date from an imported statement when there is one and the creation date otherwise, so importing three months of history lands in the right months.
+- **Background jobs that fail safely.** Bank imports and currency conversions calculate everything first and write in one database transaction. A failure leaves the data untouched and shows the user a clear message.
+- **Stripe is the source of truth.** The app trusts webhooks, not the redirect after checkout.
+- **Demo without a mail domain.** In demo mode new accounts are verified automatically, and a nightly job restores the demo data.
+
+---
+
+## Known limitations
+
+- Bank import supports CSV and Excel only (no PDF), one statement currency per file.
+- `03/04/2026` is read as month/day, `03.04.2026` as day.month.
+- Exchange rates come from European Central Bank reference rates, so only the currencies Frankfurter supports are available.
+- The e-mail provider runs in test mode on the demo, so real e-mails are only delivered to a verified address.
+- Automated tests currently cover authentication and profile only.
+
+---
+
+## Run it locally
+
 ```bash
-1. Clone the repository:
-git clone [https://github.com/CedomirMitic/finance-tracker.git](https://github.com/CedomirMitic/finance-tracker.git)
+git clone https://github.com/CedomirMitic/finance-tracker.git
 cd finance-tracker
 
-2. Install dependencies:
 composer install
 npm install
 
-3. Environment configuration:
 cp .env.example .env
 php artisan key:generate
+# set the DB_* values in .env
 
-4. Run migrations:
 php artisan migrate
+```
 
-5. Compile Assets:
-npm run build
+In three terminals:
 
-6. Launch for Development:
-# Terminal 1: Laravel Server
-php artisan serve
+```bash
+php artisan serve        # app
+npm run dev              # Vite
+php artisan queue:work   # background jobs (import, currency conversion)
+```
 
-# Terminal 2: Vite Hot Module Replacement (HMR)
-npm run dev
+Optional: set `DEMO_MODE=true` and run `php artisan db:seed --class=DemoSeeder` to get a demo account with six months of sample data.
+Stripe, Resend and Sentry keys are only needed for billing, e-mail and error tracking.
 
-# Terminal 3: Laravel Queue Worker (For background jobs and imports)
-php artisan queue:work
+---
+
+Built by Cedomir Mitic.
