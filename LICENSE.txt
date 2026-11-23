@@ -1,0 +1,59 @@
+FinanceTracker Starter Kit - Commercial Source License
+Copyright (c) 2026 Cedomir Mitic. All rights reserved.
+
+1. GRANT
+   After purchase, the licensee ("you") receives a non-exclusive, non-transferable
+   license to use and modify the source code of this kit to build and deploy
+   an unlimited number of end products, for yourself or for your clients.
+   One license covers ONE developer.
+   Each additional developer who works with the source code needs their own license.
+
+2. RESTRICTIONS
+   You may NOT:
+   a) resell, sublicense, redistribute or share the source code (original or modified)
+      as a starter kit, template, boilerplate, theme or any similar product;
+   b) publish the source code in a public repository or give it to anyone who has not
+      purchased a license;
+   c) offer an end product whose main value is the kit itself (for example a service
+      that lets users download or clone this code).
+   Your end products (the deployed applications) may be sold and distributed freely.
+You may deliver the source code of an end product to your client as part of that product, but the client may not reuse the kit code as a starter kit or template
+
+3. OWNERSHIP
+   The licensor keeps all rights in the kit. You keep all rights in the parts you
+   create. This license does not transfer ownership of the kit.
+
+4. THIRD-PARTY COMPONENTS
+   The kit contains open-source packages (for example Laravel, Vue, Inertia, Tailwind CSS,
+   Laravel Cashier, Laravel Excel, DomPDF, ApexCharts). They remain under their own
+   licenses, which are listed by `composer licenses` and in package-lock.json.
+   This license does not change those licenses.
+
+5. THIRD-PARTY SERVICES
+   The kit integrates external services (Stripe, Resend, Sentry, Frankfurter, hosting).
+   You need your own accounts and you must follow their terms. The licensor is not
+   responsible for those services, their prices or their availability.
+
+6. NO WARRANTY
+   The kit is provided "as is", without warranty of any kind. You are responsible for
+   testing it, for securing your deployment, for legal documents (Terms, Privacy Policy)
+   and for compliance with the laws that apply to your product, including data
+   protection and payment rules.
+
+7. LIABILITY
+   To the extent permitted by law, the licensor's total liability is limited to the price
+   you paid for the license. The licensor is not liable for indirect or consequential loss.
+
+8. UPDATES AND SUPPORT
+   No updates and no support are included. The kit is delivered in the version you purchased.
+
+9. REFUNDS
+   Refunds are handled according to applicable law and the terms of the payment provider at checkout.
+
+10. TERMINATION
+   The license ends automatically if you breach section 2. You must then delete all copies
+   of the source code. Products you already deployed may keep running.
+
+11. GOVERNING LAW
+These Terms are governed by the laws of the Republic of Austria, excluding its conflict-of-law rules and the UN Convention on Contracts for the International Sale of Goods (CISG). If you are a consumer residing in the EU/EEA, mandatory consumer protection laws of your country of residence remain unaffected. For business customers, the exclusive place of jurisdiction is the competent court in Vienna, Austria; for consumers, the statutory places of jurisdiction apply.
+
