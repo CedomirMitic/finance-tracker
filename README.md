@@ -20,7 +20,7 @@ The demo account has Pro features unlocked. Changing the password or e-mail, del
 
 | Billing| Statistics |
 | --- | --- |
-|| ![Billing](docs/screenshots/billling-mobile.png) |![Statistics](docs/screenshots/statistics.jpg) |
+| ![Billing](docs/screenshots/billling-mobile.png) | ![Statistics](docs/screenshots/statistics.jpg) |
 
 
 
