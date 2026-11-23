@@ -14,13 +14,13 @@ The demo account has Pro features unlocked. Changing the password or e-mail, del
 | --- | --- |
 | ![WelcomePage](docs/screenshots/landing-page.jpg) | ![Dashboard](docs/screenshots/dashboard.jpg) |
 
-| Export| Transactions |
+| Export | Transactions |
 | --- | --- |
 | ![Export](docs/screenshots/export.jpg) | ![Transactions](docs/screenshots/transactions.jpg) |
 
-| Billing| Statistics |
+| Billing | Statistics |
 | --- | --- |
-| ![Billing](docs/screenshots/billling-mobile.png) | ![Statistics](docs/screenshots/statistics.jpg) |
+| ![Billing](docs/screenshots/billing.jpg) | ![Statistics](docs/screenshots/statistics.jpg) |
 
 
 
@@ -29,11 +29,11 @@ The demo account has Pro features unlocked. Changing the password or e-mail, del
 | --- | --- |
 | <img src="docs/screenshots/landing-page-mobile.jpg"  alt="Mobile view"> | <img src="docs/screenshots/dashboard-mobile.jpg"  alt="Mobile view">  |
 
-| Export| Transactions |
+| Export | Transactions |
 | --- | --- |
 | <img src="docs/screenshots/export-mobile.jpg"  alt="Mobile view"> | <img src="docs/screenshots/transactions-mobile.jpg"  alt="Mobile view">  |
 
-| Billing| Statistics |
+| Billing | Statistics |
 | --- | --- |
 | <img src="docs/screenshots/billling-mobile.png"  alt="Mobile view"> | <img src="docs/screenshots/statistics-mobile.jpg"  alt="Mobile view">  |
 ---
